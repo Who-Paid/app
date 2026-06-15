@@ -1,0 +1,6 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Who Paid? coin token">
+  <circle cx="60" cy="60" r="50" fill="#0C8E55"></circle>
+  <circle cx="60" cy="56" r="50" fill="#1FCD7C"></circle>
+  <circle cx="60" cy="56" r="40" fill="none" stroke="#06351F" stroke-opacity="0.16" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"></circle>
+  <path d="M40 57 L54 71 L82 41" fill="none" stroke="#06351F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>

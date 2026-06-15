@@ -1,0 +1,115 @@
+/* ============================================================
+   Who Paid? — Color tokens
+   Warm cream paper, deep plum ink, a fresh "money" mint primary,
+   plus a playful supporting cast: coral, sun, sky, grape.
+   ============================================================ */
+
+:root {
+  /* --- Brand hues (base ramps) --- */
+
+  /* Mint — the primary "money / go / yes" green */
+  --mint-50:  #E4FBF0;
+  --mint-100: #BBF5D7;
+  --mint-200: #82ECB6;
+  --mint-300: #45DD92;
+  --mint-400: #1FCD7C;   /* primary */
+  --mint-500: #12B06A;
+  --mint-600: #0C8E55;
+  --mint-700: #0A6E43;
+
+  /* Coral — the hot accent: attention, "your turn", alerts */
+  --coral-50:  #FFEDEA;
+  --coral-100: #FFD3CC;
+  --coral-200: #FFAEA3;
+  --coral-300: #FF8578;
+  --coral-400: #FF6353;   /* accent */
+  --coral-500: #ED4636;
+  --coral-600: #C8311F;
+
+  /* Sun — sunny yellow highlight / coins / streaks */
+  --sun-50:  #FFF6DD;
+  --sun-100: #FFE9A8;
+  --sun-200: #FFD86A;
+  --sun-300: #FFC93D;   /* highlight */
+  --sun-400: #F5B400;
+  --sun-500: #D89A00;
+
+  /* Sky — calm info blue */
+  --sky-50:  #E6F2FF;
+  --sky-100: #BEDDFF;
+  --sky-200: #88C0FF;
+  --sky-300: #4DA2FF;   /* info */
+  --sky-400: #1E7FE6;
+  --sky-500: #1463BC;
+
+  /* Grape — friendly violet (tertiary / playful) */
+  --grape-50:  #F1ECFF;
+  --grape-100: #DCCEFF;
+  --grape-200: #BFA6FF;
+  --grape-300: #9B79FF;   /* tertiary */
+  --grape-400: #7C52F5;
+  --grape-500: #6235D6;
+
+  /* --- Ink & paper neutrals (warm-tinted) --- */
+  --paper:    #FFF7EE;   /* app background — warm cream */
+  --paper-2:  #FBEEDF;   /* slightly deeper cream panel */
+  --card:     #FFFFFF;   /* card surface */
+  --ink-900:  #1C1B29;   /* near-black plum — primary text */
+  --ink-700:  #3B3850;   /* strong secondary text */
+  --ink-500:  #6A6680;   /* muted text */
+  --ink-300:  #A6A1B8;   /* faint text / placeholders */
+  --ink-100:  #E7E2D9;   /* hairline borders on paper */
+  --line:     #ECE6DC;   /* default border on paper */
+  --line-card:#EEEAF2;   /* border on white cards */
+
+  /* ============================================================
+     Semantic aliases — prefer these in components
+     ============================================================ */
+
+  /* Brand */
+  --brand:           var(--mint-400);
+  --brand-strong:    var(--mint-500);
+  --brand-soft:      var(--mint-50);
+  --accent:          var(--coral-400);
+  --accent-strong:   var(--coral-500);
+  --accent-soft:     var(--coral-50);
+  --highlight:       var(--sun-300);
+  --info:            var(--sky-300);
+  --fun:             var(--grape-300);
+
+  /* Surfaces */
+  --surface-app:     var(--paper);
+  --surface-sunken:  var(--paper-2);
+  --surface-card:    var(--card);
+  --surface-invert:  var(--ink-900);
+
+  /* Text */
+  --text-strong:     var(--ink-900);
+  --text-body:       var(--ink-700);
+  --text-muted:      var(--ink-500);
+  --text-faint:      var(--ink-300);
+  --text-on-brand:   #06351F;   /* dark ink reads great on mint */
+  --text-on-accent:  #FFFFFF;
+  --text-on-invert:  #FFF7EE;
+
+  /* Borders */
+  --border:          var(--line);
+  --border-card:     var(--line-card);
+  --border-strong:   var(--ink-900);
+
+  /* Status */
+  --success:         var(--mint-400);
+  --warning:         var(--sun-400);
+  --danger:          var(--coral-500);
+  --danger-soft:     var(--coral-50);
+
+  /* Avatar palette — assign people a stable fun color */
+  --avatar-1: var(--coral-400);
+  --avatar-2: var(--sky-300);
+  --avatar-3: var(--grape-300);
+  --avatar-4: var(--sun-300);
+  --avatar-5: var(--mint-400);
+  --avatar-6: #FF9F45; /* tangerine */
+  --avatar-7: #2BD0C4; /* teal */
+  --avatar-8: #F472B6; /* pink */
+}
