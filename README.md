@@ -17,7 +17,7 @@ stamps the date. Add photos, names, and amounts; share a table and it syncs live
 | [`DEPLOY.md`](DEPLOY.md) | Full roadmap incl. the native iPhone / App Store path |
 | `project/`, `chats/` | Original Claude Design prototype + transcript (reference) |
 
-## Quick start
+## Quick start 
 
 ```bash
 cd web
