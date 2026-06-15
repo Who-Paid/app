@@ -9,16 +9,14 @@ interface Props {
   person: Person;
   onClose: () => void;
   onSave: (tableId: string, personId: string, upd: Partial<Person>) => void;
-  onMarkPaid: (tableId: string, personId: string) => void;
+  onRemove: (tableId: string, personId: string) => void;
 }
 
-export function EditSheet({ table, person, onClose, onSave, onMarkPaid }: Props) {
+export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
   const [name, setName] = useState(person.name || '');
   const [amount, setAmount] = useState(person.amount != null ? String(person.amount) : '');
   const [photo, setPhoto] = useState<string | null>(person.photo || null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const isPayer = table.paidBy === person.id;
-
   const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
@@ -89,10 +87,11 @@ export function EditSheet({ table, person, onClose, onSave, onMarkPaid }: Props)
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 2 }}>
             <Button variant="primary" size="lg" block onClick={save}>Save</Button>
-            {!isPayer && (
-              <Button variant="secondary" size="md" block iconLeft={<Icon name="coins" size={20} />}
-                onClick={() => { onMarkPaid(table.id, person.id); onClose(); }}>
-                Mark {person.isMe ? 'you' : 'them'} as paid
+            {table.people.length === 3 && !person.isMe && (
+              <Button variant="ghost" size="md" block iconLeft={<Icon name="trash-2" size={18} />}
+                onClick={() => { onRemove(table.id, person.id); onClose(); }}
+                style={{ color: 'var(--red-500, #ef4444)' }}>
+                Remove {person.name || 'this person'}
               </Button>
             )}
           </div>

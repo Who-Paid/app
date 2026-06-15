@@ -9,7 +9,7 @@ import { Toast } from './components/Toast';
 type View = 'start' | 'table';
 
 export default function App() {
-  const { tables, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable } = useTables();
+  const { tables, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<{ tableId: string; personId: string } | null>(null);
@@ -99,7 +99,7 @@ export default function App() {
             person={editPerson}
             onClose={() => setEdit(null)}
             onSave={savePerson}
-            onMarkPaid={(tid, pid) => { setPaid(tid, pid); flash('Coin moved — paid stamp updated ✓'); }}
+            onRemove={(tid, pid) => { removePerson(tid, pid); setEdit(null); }}
           />
         )}
       </div>

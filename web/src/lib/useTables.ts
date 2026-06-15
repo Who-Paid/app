@@ -36,8 +36,7 @@ export function useTables() {
 
   useEffect(() => {
     refresh();
-    const unsub = backend.subscribe(refresh);
-    return unsub;
+    return backend.subscribe(refresh);
   }, [refresh]);
 
   // Persist + optimistic local update.
@@ -97,5 +96,9 @@ export function useTables() {
     void backend.delete(tableId);
   }, []);
 
-  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable };
+  const removePerson = useCallback((tableId: string, personId: string) => {
+    patch(tableId, (t) => ({ ...t, people: t.people.filter((p) => p.id !== personId) }));
+  }, [patch]);
+
+  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson };
 }
