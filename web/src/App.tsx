@@ -9,7 +9,7 @@ import { Toast } from './components/Toast';
 type View = 'start' | 'table';
 
 export default function App() {
-  const { tables, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite } = useTables();
+  const { tables, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<{ tableId: string; personId: string } | null>(null);
@@ -86,6 +86,7 @@ export default function App() {
               tables={tables}
               onOpen={(id) => { setOpenId(id); setView('table'); }}
               onNew={startNew}
+              onDelete={deleteTable}
             />
           </div>
         )}

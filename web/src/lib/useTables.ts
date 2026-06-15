@@ -92,5 +92,10 @@ export function useTables() {
     return t;
   }, []);
 
-  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite };
+  const deleteTable = useCallback((tableId: string) => {
+    setTables((ts) => ts.filter((t) => t.id !== tableId));
+    void backend.delete(tableId);
+  }, []);
+
+  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable };
 }

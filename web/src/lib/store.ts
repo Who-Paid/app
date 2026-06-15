@@ -27,6 +27,8 @@ export interface Backend {
   upsert(table: Table): Promise<void>;
   /** Add this device to a table's members (used when opening an invite link). */
   join(tableId: string): Promise<Table | null>;
+  /** Remove this device from a table; deletes the row if no members remain. */
+  delete(tableId: string): Promise<void>;
   /** Subscribe to remote changes; returns an unsubscribe fn. */
   subscribe(onChange: () => void): () => void;
 }
@@ -53,6 +55,10 @@ const localBackend: Backend = {
   async join(tableId) {
     const all = await this.loadAll();
     return all.find((t) => t.id === tableId) ?? null;
+  },
+  async delete(tableId) {
+    const all = await this.loadAll();
+    localStorage.setItem(LS_TABLES, JSON.stringify(all.filter((t) => t.id !== tableId)));
   },
   subscribe(onChange) {
     const handler = (e: StorageEvent) => {
@@ -108,6 +114,21 @@ const supabaseBackend: Backend = {
       await supabase!.from('tables').update({ members }).eq('id', tableId);
     }
     return data.data as Table;
+  },
+  async delete(tableId) {
+    const me = deviceId();
+    const { data } = await supabase!
+      .from('tables')
+      .select('members')
+      .eq('id', tableId)
+      .maybeSingle();
+    if (!data) return;
+    const remaining = (data.members as string[]).filter((m) => m !== me);
+    if (remaining.length === 0) {
+      await supabase!.from('tables').delete().eq('id', tableId);
+    } else {
+      await supabase!.from('tables').update({ members: remaining }).eq('id', tableId);
+    }
   },
   subscribe(onChange) {
     const channel = supabase!
