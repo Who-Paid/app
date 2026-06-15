@@ -1,25 +1,29 @@
-# CODING AGENTS: READ THIS FIRST
+# Who Paid?
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Whose round was it again? One coin per table — flick it over when it's your shout.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+A playful tracker for whose turn it is to pay among friends, flatmates, or couples.
+Each **table** is a shared surface split into a band per person; a **coin** sits with
+whoever paid last. Flick it (or roll the dice) and it bounces to the next person and
+stamps the date. Add photos, names, and amounts; share a table and it syncs live.
 
-## What you should do — IMPORTANT
+## Repo layout
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+| Path | What |
+|------|------|
+| [`web/`](web/) | The app — React + TypeScript + Vite. **Deploy this.** |
+| [`supabase/`](supabase/) | `schema.sql` for real cross-device sync |
+| [`CONNECT.md`](CONNECT.md) | Wire up GitHub → Vercel → Supabase (step by step) |
+| [`DEPLOY.md`](DEPLOY.md) | Full roadmap incl. the native iPhone / App Store path |
+| `project/`, `chats/` | Original Claude Design prototype + transcript (reference) |
 
-**Read `project/app/Who Paid.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## Quick start
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:5173
+```
 
-## About the design files
-
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
-
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
-
-## Bundle contents
-
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `App Who Paid?` project files (HTML prototypes, assets, components)
+Works on-device with no backend. Add Supabase keys (see `CONNECT.md`) to turn on
+real sync and invite links. Deploys to Vercel with **Root Directory = `web`**.
