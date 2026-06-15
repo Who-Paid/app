@@ -1,0 +1,58 @@
+/* Who Paid? — design tokens (ported from the design system) */
+:root {
+  /* Mint — primary */
+  --mint-50:#E4FBF0; --mint-100:#BBF5D7; --mint-200:#82ECB6; --mint-300:#45DD92;
+  --mint-400:#1FCD7C; --mint-500:#12B06A; --mint-600:#0C8E55; --mint-700:#0A6E43;
+  /* Coral — accent */
+  --coral-50:#FFEDEA; --coral-100:#FFD3CC; --coral-200:#FFAEA3; --coral-300:#FF8578;
+  --coral-400:#FF6353; --coral-500:#ED4636; --coral-600:#C8311F;
+  /* Sun */
+  --sun-50:#FFF6DD; --sun-100:#FFE9A8; --sun-200:#FFD86A; --sun-300:#FFC93D; --sun-400:#F5B400; --sun-500:#D89A00;
+  /* Sky */
+  --sky-50:#E6F2FF; --sky-100:#BEDDFF; --sky-200:#88C0FF; --sky-300:#4DA2FF; --sky-400:#1E7FE6; --sky-500:#1463BC;
+  /* Grape */
+  --grape-50:#F1ECFF; --grape-100:#DCCEFF; --grape-200:#BFA6FF; --grape-300:#9B79FF; --grape-400:#7C52F5; --grape-500:#6235D6;
+  /* Ink & paper */
+  --paper:#FFF7EE; --paper-2:#FBEEDF; --card:#FFFFFF;
+  --ink-900:#1C1B29; --ink-700:#3B3850; --ink-500:#6A6680; --ink-300:#A6A1B8; --ink-100:#E7E2D9;
+  --line:#ECE6DC; --line-card:#EEEAF2;
+
+  /* Semantic */
+  --brand:var(--mint-400); --brand-strong:var(--mint-500); --brand-soft:var(--mint-50);
+  --accent:var(--coral-400); --highlight:var(--sun-300); --info:var(--sky-300); --fun:var(--grape-300);
+  --surface-app:var(--paper); --surface-sunken:var(--paper-2); --surface-card:var(--card); --surface-invert:var(--ink-900);
+  --text-strong:var(--ink-900); --text-body:var(--ink-700); --text-muted:var(--ink-500); --text-faint:var(--ink-300);
+  --text-on-brand:#06351F; --text-on-accent:#FFFFFF; --text-on-invert:#FFF7EE;
+  --border:var(--line); --border-card:var(--line-card); --border-strong:var(--ink-900);
+  --danger:var(--coral-500);
+
+  /* Avatar palette */
+  --avatar-1:var(--coral-400); --avatar-2:var(--sky-300); --avatar-3:var(--grape-300); --avatar-4:var(--sun-300);
+  --avatar-5:var(--mint-400); --avatar-6:#FF9F45; --avatar-7:#2BD0C4; --avatar-8:#F472B6;
+
+  /* Type */
+  --font-display:'Fredoka','Nunito Sans',system-ui,sans-serif;
+  --font-body:'Nunito Sans',system-ui,-apple-system,sans-serif;
+  --font-mono:'Space Mono',ui-monospace,'SF Mono',monospace;
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+  --fs-h1:2.25rem; --fs-h2:1.75rem; --fs-h3:1.375rem; --fs-title:1.125rem; --fs-body:1rem; --fs-sm:.875rem; --fs-xs:.75rem;
+  --lh-tight:1.05; --lh-snug:1.2; --lh-normal:1.45; --lh-relaxed:1.6;
+  --ls-tight:-0.02em; --ls-wide:.04em;
+
+  /* Spacing */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px;
+  --space-8:32px; --space-10:40px; --space-12:48px; --space-16:64px;
+  --screen-pad:20px; --tap-min:44px;
+
+  /* Radius */
+  --radius-xs:8px; --radius-sm:12px; --radius-md:16px; --radius-lg:24px; --radius-xl:32px; --radius-2xl:40px; --radius-pill:999px;
+
+  /* Shadow */
+  --shadow-sm:0 1px 2px rgba(28,27,41,.06),0 1px 1px rgba(28,27,41,.04);
+  --shadow-md:0 4px 12px rgba(28,27,41,.08),0 1px 3px rgba(28,27,41,.05);
+  --shadow-lg:0 12px 28px rgba(28,27,41,.12),0 4px 8px rgba(28,27,41,.06);
+  --shadow-xl:0 24px 56px rgba(28,27,41,.16),0 8px 16px rgba(28,27,41,.08);
+  --pop-brand:0 4px 0 var(--mint-600); --pop-accent:0 4px 0 var(--coral-600);
+  --pop-sun:0 4px 0 var(--sun-500); --pop-ink:0 4px 0 var(--ink-900); --pop-sm:0 3px 0 rgba(28,27,41,.18);
+  --ring:0 0 0 4px rgba(255,99,83,.35);
+}

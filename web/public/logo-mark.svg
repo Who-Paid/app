@@ -1,0 +1,10 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Who Paid? coin mark">
+  
+  <circle cx="64" cy="70" r="48" fill="#0C8E55"></circle>
+  
+  <circle cx="64" cy="60" r="48" fill="#1FCD7C"></circle>
+  
+  <circle cx="64" cy="60" r="38" fill="none" stroke="#BBF5D7" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"></circle>
+  
+  <path d="M45 61 L58 74 L84 46" fill="none" stroke="#06351F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>

@@ -1,0 +1,96 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Person, Table } from './types';
+import { backend, syncEnabled } from './store';
+import { nowISO } from './util';
+
+let uid = 0;
+const newId = (p: string) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`;
+
+export function newTable(): Table {
+  const oid = newId('p');
+  return {
+    id: newId('t'),
+    name: 'New table',
+    synced: syncEnabled,
+    paidBy: null,
+    paidAt: null,
+    updatedAt: Date.now(),
+    people: [
+      { id: oid, name: '', photo: null, amount: null },
+      { id: 'me', name: 'Me', isMe: true, photo: null, amount: null },
+    ],
+  };
+}
+
+export function useTables() {
+  const [tables, setTables] = useState<Table[]>([]);
+  const [loading, setLoading] = useState(true);
+  const tablesRef = useRef<Table[]>([]);
+  tablesRef.current = tables;
+
+  const refresh = useCallback(async () => {
+    const all = await backend.loadAll();
+    setTables(all);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const unsub = backend.subscribe(refresh);
+    return unsub;
+  }, [refresh]);
+
+  // Persist + optimistic local update.
+  const commit = useCallback((table: Table) => {
+    const stamped = { ...table, updatedAt: Date.now() };
+    setTables((ts) => {
+      const next = ts.filter((t) => t.id !== stamped.id);
+      next.unshift(stamped);
+      return next;
+    });
+    void backend.upsert(stamped);
+    return stamped;
+  }, []);
+
+  const patch = useCallback((tableId: string, fn: (t: Table) => Table) => {
+    const cur = tablesRef.current.find((t) => t.id === tableId);
+    if (!cur) return;
+    commit(fn(cur));
+  }, [commit]);
+
+  const createTable = useCallback(() => {
+    const t = newTable();
+    return commit(t);
+  }, [commit]);
+
+  const setPaid = useCallback((tableId: string, personId: string) => {
+    patch(tableId, (t) => ({ ...t, paidBy: personId, paidAt: nowISO() }));
+  }, [patch]);
+
+  const savePerson = useCallback((tableId: string, personId: string, upd: Partial<Person>) => {
+    patch(tableId, (t) => ({
+      ...t,
+      people: t.people.map((p) => (p.id === personId ? { ...p, ...upd } : p)),
+    }));
+  }, [patch]);
+
+  const addPerson = useCallback((tableId: string) => {
+    patch(tableId, (t) => {
+      if (t.people.length >= 3) return t;
+      const me = t.people.find((p) => p.isMe)!;
+      const others = t.people.filter((p) => !p.isMe);
+      return { ...t, people: [...others, { id: newId('p'), name: '', photo: null, amount: null }, me] };
+    });
+  }, [patch]);
+
+  // Join a table shared via invite link, then surface it.
+  const joinByInvite = useCallback(async (tableId: string): Promise<Table | null> => {
+    const t = await backend.join(tableId);
+    if (t) {
+      setTables((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
+    }
+    return t;
+  }, []);
+
+  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite };
+}
