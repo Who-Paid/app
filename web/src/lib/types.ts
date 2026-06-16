@@ -1,6 +1,7 @@
 export interface Payment {
   id: string;
   amount: number;
+  addedAt?: string; // ISO string
 }
 
 export interface Person {

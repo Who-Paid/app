@@ -4,6 +4,20 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Icon } from '../components/ui/Icon';
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) {
+    const h = d.getHours(), m = d.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 interface Props {
   table: Table;
   person: Person;
@@ -15,7 +29,7 @@ interface Props {
 export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
   const [name, setName] = useState(person.name || '');
   const [photo, setPhoto] = useState<string | null>(person.photo || null);
-  const [payments, setPayments] = useState<{ id: string; amount: number }[]>(() => {
+  const [payments, setPayments] = useState<{ id: string; amount: number; addedAt?: string }[]>(() => {
     if (person.payments && person.payments.length > 0) return person.payments;
     if (person.amount != null) return [{ id: crypto.randomUUID(), amount: person.amount }];
     return [];
@@ -37,7 +51,7 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
   const confirmAdd = () => {
     const v = parseFloat(addValue);
     if (!isNaN(v) && v > 0) {
-      setPayments((ps) => [...ps, { id: crypto.randomUUID(), amount: v }]);
+      setPayments((ps) => [...ps, { id: crypto.randomUUID(), amount: v, addedAt: new Date().toISOString() }]);
     }
     setAddValue('');
     setShowAdd(false);
@@ -123,10 +137,17 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
                     borderBottom: i < payments.length - 1 ? '1px solid var(--ink-100)' : 'none',
                   }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-900)' }}>${p.amount.toFixed(2)}</span>
-                    <button
-                      onClick={() => setPayments((ps) => ps.filter((x) => x.id !== p.id))}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }}
-                    ><Icon name="x" size={15} /></button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {p.addedAt && (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-faint)', fontVariantNumeric: 'tabular-nums' }}>
+                          {fmtTime(p.addedAt)}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => setPayments((ps) => ps.filter((x) => x.id !== p.id))}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }}
+                      ><Icon name="x" size={15} /></button>
+                    </div>
                   </div>
                 ))}
               </div>
