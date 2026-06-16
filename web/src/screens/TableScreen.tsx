@@ -48,11 +48,14 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const tableRef = useRef<HTMLDivElement>(null);
   const coinRef = useRef<HTMLDivElement>(null);
   const squashRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
   const flyingRef = useRef(false);
   const spinRef = useRef(0);
-  const dragRef = useRef({ active: false, moved: false, startY: 0 });
+  const dragRef = useRef({ active: false, moved: false, startY: 0, startX: 0 });
+  const velRef = useRef({ vx: 0, vy: 0, lastX: 0, lastY: 0, t: 0 });
   const [confetti, setConfetti] = useState(0);
+  const [hoverBandIdx, setHoverBandIdx] = useState<number | null>(null);
   const [mood, setMood] = useState<Mood>(() => {
     if (!hasPayer) return 'idle';
     return order[paidIdx].isMe ? 'pay' : 'safe';
@@ -88,6 +91,33 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     const top = COIN / 2 + MARGIN + (row === 0 ? 40 : 0);
     const bot = H - (COIN / 2 + MARGIN);
     return Math.max(top, Math.min(bot, y));
+  };
+
+  // Which band index is a point (px) over?
+  const getBandIdx = (x: number, y: number, W: number, H: number) => {
+    if (n === 4) return (y < H / 2 ? 0 : 2) + (x < W / 2 ? 0 : 1);
+    return Math.min(n - 1, Math.max(0, Math.floor((y / H) * n)));
+  };
+
+  // Smooth drop after a slow conscious drag (no bouncing).
+  const landAt = (targetIdx: number) => {
+    flyingRef.current = true;
+    const w = coinRef.current!;
+    const H = tableRef.current!.clientHeight;
+    const targetY = n === 4 ? landY4(targetIdx, H) : landY(targetIdx, H);
+    w.style.transition = 'top 0.38s cubic-bezier(.34,1.3,.64,1), left 0.38s cubic-bezier(.34,1.3,.64,1)';
+    w.style.top = `${targetY}px`;
+    w.style.left = n === 4 ? `${targetIdx % 2 === 0 ? 25 : 75}%` : '50%';
+    w.style.transform = 'translate(-50%,-50%)';
+    if (squashRef.current) squashRef.current.style.animation = 'none';
+    setTimeout(() => {
+      w.style.transition = '';
+      flyingRef.current = false;
+      if (squashRef.current) squashRef.current.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite';
+      setMood(order[targetIdx].isMe ? 'pay' : 'safe');
+      setConfetti((c) => c + 1);
+      onPaid(table.id, order[targetIdx].id);
+    }, 400);
   };
 
   // Imperatively position the coin so React re-renders don't fight the rAF loop.
@@ -155,6 +185,8 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     }
 
     if (squash) squash.style.animation = 'none';
+    // Snap X back to centre — coin may have been dragged off-axis.
+    w.style.left = '50%';
     w.style.transition = 'none';
 
     const Yt = COIN / 2 + MARGIN;
@@ -221,31 +253,90 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const onDown = (e: React.PointerEvent) => {
     if (flyingRef.current) return;
     e.stopPropagation();
-    dragRef.current = { active: true, moved: false, startY: e.clientY };
+    dragRef.current = { active: true, moved: false, startY: e.clientY, startX: e.clientX };
     coinRef.current?.setPointerCapture?.(e.pointerId);
+    setMood('flick');
+    if (hintRef.current) hintRef.current.style.opacity = '0';
+    // Scale coin up so the user knows they've grabbed it.
+    if (scaleRef.current) {
+      scaleRef.current.style.transition = 'transform 0.12s ease-out';
+      scaleRef.current.style.transform = 'scale(1.22)';
+    }
+    if (squashRef.current) squashRef.current.style.animation = 'none';
+    // Set initial hovered band from the grab position.
+    const el = tableRef.current!;
+    const rect = el.getBoundingClientRect();
+    const sy = (e.clientY - rect.top) / (rect.height / el.clientHeight || 1);
+    const sx = (e.clientX - rect.left) / (rect.width / el.clientWidth || 1);
+    setHoverBandIdx(getBandIdx(sx, sy, el.clientWidth, el.clientHeight));
+    velRef.current = { vx: 0, vy: 0, lastX: e.clientX, lastY: e.clientY, t: performance.now() };
   };
   const onMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d.active) return;
-    if (Math.abs(e.clientY - d.startY) > 6) d.moved = true;
-    if (n === 4) return; // 2×2 doesn't support drag-to-aim
+    if (Math.abs(e.clientY - d.startY) > 6 || Math.abs(e.clientX - d.startX) > 6) d.moved = true;
+    // Track velocity for flick detection.
+    const now = performance.now();
+    const dt = now - velRef.current.t;
+    if (dt > 0 && dt < 150) {
+      velRef.current.vx = (e.clientX - velRef.current.lastX) / dt;
+      velRef.current.vy = (e.clientY - velRef.current.lastY) / dt;
+    }
+    velRef.current.lastX = e.clientX;
+    velRef.current.lastY = e.clientY;
+    velRef.current.t = now;
+    // Move coin freely in 2D.
     const el = tableRef.current!;
     const rect = el.getBoundingClientRect();
-    const scale = rect.height / el.clientHeight || 1;
+    const sx = rect.width / el.clientWidth || 1;
+    const sy = rect.height / el.clientHeight || 1;
     const H = el.clientHeight;
-    const y = Math.max(COIN / 2, Math.min(H - COIN / 2, (e.clientY - rect.top) / scale));
+    const W = el.clientWidth;
+    const y = Math.max(COIN / 2, Math.min(H - COIN / 2, (e.clientY - rect.top) / sy));
+    const x = Math.max(COIN / 2, Math.min(W - COIN / 2, (e.clientX - rect.left) / sx));
     const w = coinRef.current!;
     w.style.transition = 'none';
     w.style.top = `${y}px`;
+    w.style.left = `${x}px`;
+    w.style.transform = 'translate(-50%,-50%)';
+    setHoverBandIdx(getBandIdx(x, y, W, H));
   };
   const onUp = () => {
     const d = dragRef.current;
     if (!d.active) return;
     d.active = false;
-    if (n === 4) { glideTo(randomTarget()); return; }
-    const cur = parseFloat(coinRef.current!.style.top);
-    if (d.moved && !Number.isNaN(cur)) glideTo(otherTarget(), cur);
-    else glideTo(otherTarget());
+    // Release scale.
+    if (scaleRef.current) {
+      scaleRef.current.style.transition = 'transform 0.18s ease-in';
+      scaleRef.current.style.transform = '';
+    }
+    setHoverBandIdx(null);
+    if (!d.moved) {
+      // Tap: bounce to a random other person.
+      glideTo(n === 4 ? randomTarget() : otherTarget());
+      return;
+    }
+    // Flick detection: speed in px/s.
+    const timeSince = performance.now() - velRef.current.t;
+    const speed = timeSince < 150
+      ? Math.sqrt(velRef.current.vx ** 2 + velRef.current.vy ** 2) * 1000
+      : 0;
+    if (speed > 350) {
+      // Fast flick → bouncy/spin animation.
+      if (n === 4) {
+        glideTo(randomTarget());
+      } else {
+        const curY = parseFloat(coinRef.current!.style.top);
+        glideTo(otherTarget(), Number.isNaN(curY) ? undefined : curY);
+      }
+    } else {
+      // Slow conscious drag → smooth land on whichever band the coin is over.
+      const el = tableRef.current!;
+      const curY = parseFloat(coinRef.current!.style.top);
+      const curX = parseFloat(coinRef.current!.style.left);
+      const target = getBandIdx(curX, curY, el.clientWidth, el.clientHeight);
+      landAt(target);
+    }
   };
 
   return (
@@ -282,6 +373,10 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             transition: 'background .3s ease',
           }}>
             {p.photo && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,27,41,.15), rgba(28,27,41,.55))' }} />}
+            {/* Band highlight when coin is dragged over it */}
+            {hoverBandIdx === i && (
+              <span style={{ position: 'absolute', inset: 0, background: 'rgba(52,211,153,.18)', pointerEvents: 'none' }} />
+            )}
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: is4 ? 5 : 8 }}>
               {!p.photo && (named
                 ? <Avatar name={isMe ? 'You' : p.name} size={avatarSize} ring={isPayer} />
@@ -314,8 +409,11 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         onClick={(e) => e.stopPropagation()}
         style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 30, cursor: 'grab', touchAction: 'none', width: COIN, height: COIN }}>
         <div style={{ position: 'absolute', left: '50%', bottom: -13, transform: 'translateX(-50%)', width: 58, height: 12, borderRadius: '50%', background: 'rgba(28,27,41,.16)', filter: 'blur(4px)' }} />
-        <div ref={squashRef} style={{ animation: 'wp-coin-idle 2.8s ease-in-out infinite', transformOrigin: '50% 50%' }}>
-          <GoldCoin size={COIN} mood={mood} drop={false} />
+        {/* scaleRef handles the grab-scale; squashRef handles bob + squash during flight */}
+        <div ref={scaleRef} style={{ transformOrigin: '50% 50%' }}>
+          <div ref={squashRef} style={{ animation: 'wp-coin-idle 2.8s ease-in-out infinite', transformOrigin: '50% 50%' }}>
+            <GoldCoin size={COIN} mood={mood} drop={false} />
+          </div>
         </div>
         <div ref={hintRef} style={{ position: 'absolute', left: '50%', top: -34, transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'var(--ink-900)', color: 'var(--paper)', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 11.5, padding: '5px 10px', borderRadius: 99, transition: 'opacity .3s', pointerEvents: 'none' }}>👆 flick to flip</div>
       </div>
