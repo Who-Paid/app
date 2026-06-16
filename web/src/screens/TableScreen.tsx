@@ -24,8 +24,6 @@ interface Props {
 export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, onInvite }: Props) {
   const order = table.people; // others first, "me" last (bottom)
   const n = order.length;
-  const otherNames = order.filter((p) => !p.isMe).map((p) => p.name).filter(Boolean);
-  const title = otherNames.join(' & ') || 'New table';
   const paidIdx = order.findIndex((p) => p.id === table.paidBy);
   const hasPayer = paidIdx >= 0;
 
@@ -421,10 +419,6 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
       {/* top bar */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 35, padding: 'var(--wp-pad-top) 14px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(255,247,238,.92), rgba(255,247,238,0))' }}>
         <IconButton label="Back" onClick={onBack}><Icon name="arrow-left" size={22} /></IconButton>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 16, color: 'var(--ink-900)' }}>{title}</span>
-          {table.synced ? <Icon name="refresh-cw" size={13} style={{ color: 'var(--mint-500)' }} /> : <Icon name="link" size={13} style={{ color: 'var(--ink-300)' }} />}
-        </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {n < 4 && <IconButton label="Add person" onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
           <div style={{ position: 'relative' }}>
