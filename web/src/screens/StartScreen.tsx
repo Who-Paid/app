@@ -103,9 +103,10 @@ export function StartScreen({
               const label = others || 'New table';
               const isConfirming = confirmId === t.id;
               return (
-                <div key={t.id} className="wp-card wp-card--pad-md" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  <button onClick={() => onOpen(t.id)} className="wp-card--interactive"
-                    style={{ display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', width: '100%', cursor: 'pointer', font: 'inherit', background: 'none', border: 'none', padding: 0 }}>
+                <div key={t.id} className="wp-card wp-card--pad-md wp-card--interactive"
+                  onClick={() => { if (!isConfirming) onOpen(t.id); }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <MiniTable table={t} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, color: 'var(--ink-900)' }}>
@@ -117,15 +118,16 @@ export function StartScreen({
                     </div>
                     {t.synced ? <Badge color="mint" dot>synced</Badge> : <Badge color="neutral">just you</Badge>}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmId(t.id); }}
+                      onClick={(e) => { e.stopPropagation(); setConfirmId(isConfirming ? null : t.id); }}
                       aria-label="Delete table"
                       style={{ background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer', color: 'var(--text-faint)', lineHeight: 0 }}
                     >
                       <Icon name="trash-2" size={16} />
                     </button>
-                  </button>
+                  </div>
                   {isConfirming && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                    <div onClick={(e) => e.stopPropagation()}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
                       <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>Delete {label}?</span>
                       <button onClick={() => setConfirmId(null)}
                         style={{ background: 'none', border: 'none', padding: '4px 8px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
