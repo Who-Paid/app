@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Table } from '../lib/types';
 import { paidLabel } from '../lib/util';
 import { Avatar } from '../components/ui/Avatar';
@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/Badge';
 import { IconButton } from '../components/ui/IconButton';
 import { Icon } from '../components/ui/Icon';
 import { Confetti } from '../components/Confetti';
+import { GoldCoin, type Mood } from '../components/GoldCoin';
 
 const COIN = 86;
 const MARGIN = 7;
@@ -35,6 +36,18 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const spinRef = useRef(0);
   const dragRef = useRef({ active: false, moved: false, startY: 0 });
   const [confetti, setConfetti] = useState(0);
+  const [mood, setMood] = useState<Mood>(() => {
+    if (!hasPayer) return 'idle';
+    return order[paidIdx].isMe ? 'pay' : 'safe';
+  });
+
+  // Sync mood when paidBy changes externally (e.g. realtime)
+  useEffect(() => {
+    if (flyingRef.current) return;
+    if (!hasPayer) { setMood('idle'); return; }
+    setMood(order[paidIdx].isMe ? 'pay' : 'safe');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table.paidBy]);
 
   // Where the coin rests inside a band: pulled toward the screen's center line so
   // it never covers that person's avatar + name, and clamped on-screen.
@@ -78,6 +91,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   function glideTo(targetIdx: number, fromY?: number) {
     if (flyingRef.current || !tableRef.current) return;
     flyingRef.current = true;
+    setMood('flick');
     if (hintRef.current) hintRef.current.style.opacity = '0';
 
     const w = coinRef.current!, squash = squashRef.current;
@@ -135,6 +149,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
           }
           w.style.transition = '';
           flyingRef.current = false;
+          setMood(order[targetIdx].isMe ? 'pay' : 'safe');
           setConfetti((c) => c + 1);
           onPaid(table.id, order[targetIdx].id);
         }
@@ -226,8 +241,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 30, cursor: 'grab', touchAction: 'none', width: COIN, height: COIN }}>
         <div style={{ position: 'absolute', left: '50%', bottom: -13, transform: 'translateX(-50%)', width: 58, height: 12, borderRadius: '50%', background: 'rgba(28,27,41,.16)', filter: 'blur(4px)' }} />
         <div ref={squashRef} style={{ animation: 'wp-coin-idle 2.8s ease-in-out infinite', transformOrigin: '50% 50%' }}>
-          <img src="coin.svg" alt="coin" draggable={false}
-            style={{ width: COIN, height: COIN, display: 'block', filter: 'drop-shadow(0 6px 10px rgba(28,27,41,.22))', pointerEvents: 'none' }} />
+          <GoldCoin size={COIN} mood={mood} drop={false} />
         </div>
         <div ref={hintRef} style={{ position: 'absolute', left: '50%', top: -34, transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'var(--ink-900)', color: 'var(--paper)', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 11.5, padding: '5px 10px', borderRadius: 99, transition: 'opacity .3s', pointerEvents: 'none' }}>👆 flick to flip</div>
       </div>

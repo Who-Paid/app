@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Table } from './lib/types';
 import { useTables } from './lib/useTables';
+import { isAtLimit, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
 import { EditSheet } from './screens/EditSheet';
+import { PaywallSheet } from './screens/PaywallSheet';
+import { ReviewPrompt } from './screens/ReviewPrompt';
 import { Toast } from './components/Toast';
 
 type View = 'start' | 'table';
@@ -14,7 +17,10 @@ export default function App() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<{ tableId: string; personId: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const toastTimer = useRef<number | undefined>(undefined);
+  const reviewTimer = useRef<number | undefined>(undefined);
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
@@ -34,7 +40,7 @@ export default function App() {
         setView('table');
         flash(syncEnabled ? 'Joined a shared table 🔗' : 'Opened a shared table');
       } else {
-        flash('That table link isn’t available');
+        flash("That table link isn't available");
       }
       history.replaceState(null, '', window.location.pathname + window.location.search);
     })();
@@ -47,26 +53,52 @@ export default function App() {
     : null;
   const editTable = edit ? tables.find((t) => t.id === edit.tableId) ?? null : null;
 
-  const startNew = () => {
+  const doCreateTable = useCallback(() => {
     const t = createTable();
     setOpenId(t.id);
     setView('table');
     flash('New table — add who you ate with 🍽️');
+  }, [createTable, flash]);
+
+  const startNew = () => {
+    if (isAtLimit(tables.length)) {
+      setShowPaywall(true);
+      return;
+    }
+    doCreateTable();
+  };
+
+  const handleTrialStarted = () => {
+    setShowPaywall(false);
+    doCreateTable();
+    flash('7-day Pro trial started — unlimited tables unlocked 🎉');
+  };
+
+  const handlePaid = (tableId: string, personId: string) => {
+    setPaid(tableId, personId);
+    const wins = incrementWinCount();
+    if (shouldShowReview(wins)) {
+      clearTimeout(reviewTimer.current);
+      // Delay so confetti plays first
+      reviewTimer.current = window.setTimeout(() => setShowReview(true), 1400);
+    }
   };
 
   const onInvite = async (table: Table) => {
     const url = `${window.location.origin}${window.location.pathname}#/t/${table.id}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Who Paid?', text: `Join “${table.name}” on Who Paid?`, url });
+        await navigator.share({ title: 'Who Paid?', text: `Join "${table.name}" on Who Paid?`, url });
         return;
       }
       await navigator.clipboard.writeText(url);
-      flash(syncEnabled ? 'Invite link copied 🔗 — they’ll see this table live' : 'Invite link copied 🔗');
+      flash(syncEnabled ? "Invite link copied 🔗 — they'll see this table live" : 'Invite link copied 🔗');
     } catch {
       flash('Invite link: ' + url);
     }
   };
+
+  const status = proStatus();
 
   return (
     <div className="wp-shell">
@@ -75,7 +107,7 @@ export default function App() {
           <TableScreen
             table={current}
             onBack={() => setView('start')}
-            onPaid={setPaid}
+            onPaid={handlePaid}
             onEditPerson={(tid, pid) => setEdit({ tableId: tid, personId: pid })}
             onAddPerson={(tid) => { addPerson(tid); flash('Third seat added — table splits in thirds'); }}
             onInvite={onInvite}
@@ -87,6 +119,7 @@ export default function App() {
               onOpen={(id) => { setOpenId(id); setView('table'); }}
               onNew={startNew}
               onDelete={deleteTable}
+              status={status}
             />
           </div>
         )}
@@ -101,6 +134,18 @@ export default function App() {
             onSave={savePerson}
             onRemove={(tid, pid) => { removePerson(tid, pid); setEdit(null); }}
           />
+        )}
+
+        {showPaywall && (
+          <PaywallSheet
+            tableCount={tables.length}
+            onClose={() => setShowPaywall(false)}
+            onTrialStarted={handleTrialStarted}
+          />
+        )}
+
+        {showReview && (
+          <ReviewPrompt onClose={() => setShowReview(false)} />
         )}
       </div>
     </div>

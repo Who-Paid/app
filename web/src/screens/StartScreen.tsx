@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { Table } from '../lib/types';
+import type { ProStatus } from '../lib/pro';
+import { FREE_TABLE_LIMIT, trialDaysLeft } from '../lib/pro';
 import { paidLabel } from '../lib/util';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
@@ -32,8 +34,9 @@ function MiniTable({ table }: { table: Table }) {
 }
 
 export function StartScreen({
-  tables, onOpen, onNew, onDelete,
-}: { tables: Table[]; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void }) {
+  tables, onOpen, onNew, onDelete, status,
+}: { tables: Table[]; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void; status: ProStatus }) {
+  const atLimit = status === 'free' && tables.length >= FREE_TABLE_LIMIT;
   const [confirmId, setConfirmId] = useState<string | null>(null);
   return (
     <div style={{
@@ -44,9 +47,19 @@ export function StartScreen({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <img src="logo-mark.svg" alt="" style={{ width: 32, height: 32 }} />
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--ink-900)' }}>
-            Who<span style={{ color: 'var(--mint-500)' }}>Paid</span>?
-          </span>
+          <div>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--ink-900)' }}>
+              Who<span style={{ color: 'var(--mint-500)' }}>Paid</span>?
+            </span>
+            {status === 'trial' && (
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mint-600)', marginTop: -2 }}>
+                Pro trial · {trialDaysLeft()}d left
+              </div>
+            )}
+            {status === 'paid' && (
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mint-600)', marginTop: -2 }}>Pro</div>
+            )}
+          </div>
         </div>
         <Avatar name="You" size="md" ring />
       </div>
@@ -59,9 +72,20 @@ export function StartScreen({
         </p>
       </div>
 
-      <Button variant="primary" size="lg" block onClick={onNew} iconLeft={<Icon name="plus" size={22} />}>
-        Start new table
-      </Button>
+      <div>
+        <Button
+          variant={atLimit ? 'secondary' : 'primary'}
+          size="lg" block onClick={onNew}
+          iconLeft={<Icon name={atLimit ? 'lock' : 'plus'} size={20} />}
+        >
+          Start new table
+        </Button>
+        {atLimit && (
+          <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text-faint)', marginTop: 8 }}>
+            {FREE_TABLE_LIMIT} of {FREE_TABLE_LIMIT} free tables used · Go Pro for unlimited
+          </p>
+        )}
+      </div>
 
       {/* existing tables */}
       <div>
