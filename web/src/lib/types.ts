@@ -1,9 +1,15 @@
+export interface Payment {
+  id: string;
+  amount: number;
+}
+
 export interface Person {
   id: string;
   name: string;
   isMe?: boolean;
   photo: string | null;
   amount: number | null;
+  payments?: Payment[];
 }
 
 export interface Table {

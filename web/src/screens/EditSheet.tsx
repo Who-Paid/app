@@ -14,21 +14,40 @@ interface Props {
 
 export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
   const [name, setName] = useState(person.name || '');
-  const [amount, setAmount] = useState(person.amount != null ? String(person.amount) : '');
   const [photo, setPhoto] = useState<string | null>(person.photo || null);
+  const [payments, setPayments] = useState<{ id: string; amount: number }[]>(() => {
+    if (person.payments && person.payments.length > 0) return person.payments;
+    if (person.amount != null) return [{ id: crypto.randomUUID(), amount: person.amount }];
+    return [];
+  });
+  const [addValue, setAddValue] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const total = payments.reduce((s, p) => s + p.amount, 0);
+
   const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files && e.target.files[0];
+    const f = e.target.files?.[0];
     if (!f) return;
     const r = new FileReader();
     r.onload = () => setPhoto(r.result as string);
     r.readAsDataURL(f);
   };
 
+  const confirmAdd = () => {
+    const v = parseFloat(addValue);
+    if (!isNaN(v) && v > 0) {
+      setPayments((ps) => [...ps, { id: crypto.randomUUID(), amount: v }]);
+    }
+    setAddValue('');
+    setShowAdd(false);
+  };
+
   const save = () => {
     onSave(table.id, person.id, {
       name: person.isMe ? person.name : (name.trim() || ''),
-      amount: amount.trim() === '' ? null : parseFloat(amount) || 0,
+      amount: payments.length > 0 ? total : null,
+      payments,
       photo,
     });
     onClose();
@@ -82,8 +101,73 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
           {!person.isMe && (
             <Input label="Their name" placeholder="e.g. Daniel" value={name} onChange={(e) => setName(e.target.value)} />
           )}
-          <Input label="Amount they paid" prefix="$" amount inputMode="decimal" placeholder="0.00"
-            value={amount} onChange={(e) => setAmount(e.target.value)} />
+
+          {/* Payments section */}
+          <div style={{ background: 'var(--surface-sunken)', borderRadius: 16, padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.03em' }}>Total</span>
+              <span style={{
+                fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22,
+                color: payments.length > 0 ? 'var(--ink-900)' : 'var(--ink-300)',
+              }}>
+                {payments.length > 0 ? `$${total.toFixed(2)}` : '—'}
+              </span>
+            </div>
+
+            {payments.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--ink-100)', marginTop: 10, paddingTop: 6 }}>
+                {payments.map((p, i) => (
+                  <div key={p.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '5px 0',
+                    borderBottom: i < payments.length - 1 ? '1px solid var(--ink-100)' : 'none',
+                  }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-900)' }}>${p.amount.toFixed(2)}</span>
+                    <button
+                      onClick={() => setPayments((ps) => ps.filter((x) => x.id !== p.id))}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-muted)', display: 'flex' }}
+                    ><Icon name="x" size={15} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {showAdd ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                <span style={{ fontSize: 15, color: 'var(--text-muted)', fontWeight: 600 }}>$</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={addValue}
+                  onChange={(e) => setAddValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmAdd();
+                    if (e.key === 'Escape') { setAddValue(''); setShowAdd(false); }
+                  }}
+                  autoFocus
+                  style={{
+                    flex: 1, border: 'none', background: 'transparent', outline: 'none',
+                    fontSize: 15, fontWeight: 600, color: 'var(--ink-900)',
+                    fontFamily: 'var(--font-display)',
+                  }}
+                />
+                <Button variant="primary" size="sm" onClick={confirmAdd}>Add</Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAdd(true)}
+                style={{
+                  marginTop: 10, border: 'none', background: 'none', cursor: 'pointer', padding: 0,
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  fontSize: 13, fontWeight: 700, color: 'var(--text-muted)',
+                }}
+              >
+                <Icon name="plus" size={14} />
+                Add payment
+              </button>
+            )}
+          </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 2 }}>
             <Button variant="primary" size="lg" block onClick={save}>Save</Button>
