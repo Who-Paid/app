@@ -24,11 +24,11 @@ button { font: inherit; }
 ::selection { background: var(--sun-200); color: var(--ink-900); }
 
 /* ---- App shell: fill the phone; on desktop show a centered phone frame ---- */
-#root { min-height: 100dvh; }
+#root { height: 100dvh; }
 .wp-shell {
   position: relative;
   width: 100%;
-  min-height: 100dvh;
+  height: 100%;
   background: var(--surface-app);
   overflow: hidden;
   /* safe areas for notched iPhones */

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Profile, Table } from '../lib/types';
 import type { ProStatus } from '../lib/pro';
+import { GoldCoin } from '../components/GoldCoin';
 import { FREE_TABLE_LIMIT, trialDaysLeft } from '../lib/pro';
 import { paidLabel } from '../lib/util';
 import { Avatar } from '../components/ui/Avatar';
@@ -49,7 +50,7 @@ export function StartScreen({
       {/* brand */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <img src="logo-mark.svg" alt="" style={{ width: 32, height: 32 }} />
+          <GoldCoin size={36} mood="idle" drop={false} />
           <div>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--ink-900)' }}>
               Who<span style={{ color: 'var(--mint-500)' }}>Paid</span>?
