@@ -6,6 +6,7 @@ interface Props {
   tableCount: number;
   onClose: () => void;
   onTrialStarted: () => void;
+  trigger?: string;
 }
 
 const BENEFITS = [
@@ -14,7 +15,7 @@ const BENEFITS = [
   'Sync with the whole group for shared tables',
 ];
 
-export function PaywallSheet({ tableCount, onClose, onTrialStarted }: Props) {
+export function PaywallSheet({ tableCount, onClose, onTrialStarted, trigger }: Props) {
   const handleTrial = () => {
     startTrial();
     onTrialStarted();
@@ -37,7 +38,7 @@ export function PaywallSheet({ tableCount, onClose, onTrialStarted }: Props) {
 
         <h2 style={{ textAlign: 'center', fontSize: 24, marginBottom: 8 }}>Keep the tab open</h2>
         <p style={{ textAlign: 'center', fontSize: 15, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 22 }}>
-          You've started {tableCount} of {FREE_TABLE_LIMIT} free tables.
+          {trigger ?? `You've started ${tableCount} of ${FREE_TABLE_LIMIT} free tables.`}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 22 }}>

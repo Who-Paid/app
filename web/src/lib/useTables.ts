@@ -75,7 +75,7 @@ export function useTables() {
 
   const addPerson = useCallback((tableId: string) => {
     patch(tableId, (t) => {
-      if (t.people.length >= 3) return t;
+      if (t.people.length >= 4) return t;
       const me = t.people.find((p) => p.isMe)!;
       const others = t.people.filter((p) => !p.isMe);
       return { ...t, people: [...others, { id: newId('p'), name: '', photo: null, amount: null }, me] };

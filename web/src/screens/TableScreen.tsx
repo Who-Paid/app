@@ -49,7 +49,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table.paidBy]);
 
-  // Where the coin rests inside a band: pulled toward the screen's center line so
+  // Where the coin rests inside a band (n ≤ 3): pulled toward the screen's centre so
   // it never covers that person's avatar + name, and clamped on-screen.
   const landY = (i: number, H: number) => {
     const bandH = H / n;
@@ -57,6 +57,18 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     const dir = c < H / 2 ? 1 : -1;
     const y = c + dir * bandH * 0.36;
     const top = COIN / 2 + MARGIN + (i === 0 ? 40 : 0);
+    const bot = H - (COIN / 2 + MARGIN);
+    return Math.max(top, Math.min(bot, y));
+  };
+
+  // Resting Y for 2×2 grid (n=4): settle toward the horizontal centre line.
+  const landY4 = (i: number, H: number) => {
+    const row = Math.floor(i / 2);
+    const rowH = H / 2;
+    const c = (row + 0.5) * rowH;
+    const dir = row === 0 ? 1 : -1;
+    const y = c + dir * rowH * 0.3;
+    const top = COIN / 2 + MARGIN + (row === 0 ? 40 : 0);
     const bot = H - (COIN / 2 + MARGIN);
     return Math.max(top, Math.min(bot, y));
   };
@@ -69,7 +81,13 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     const H = el.clientHeight;
     if (!H) return;
     w.style.transition = 'none';
-    w.style.top = `${hasPayer ? landY(paidIdx, H) : H / 2}px`;
+    if (n === 4) {
+      w.style.top  = `${hasPayer ? landY4(paidIdx, H) : H / 2}px`;
+      w.style.left = hasPayer ? `${paidIdx % 2 === 0 ? 25 : 75}%` : '50%';
+    } else {
+      w.style.top  = `${hasPayer ? landY(paidIdx, H) : H / 2}px`;
+      w.style.left = '50%';
+    }
     w.style.transform = `translate(-50%,-50%) rotate(${spinRef.current}deg)`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table.id, table.paidBy, n]);
@@ -88,6 +106,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
 
   // The coin behaves like a bouncing ball: ricochets off the top & bottom edges a
   // few times, losing energy on each hit, then rolls to a stop on the chosen side.
+  // For the 2×2 grid (n=4) a smooth CSS arc is used instead.
   function glideTo(targetIdx: number, fromY?: number) {
     if (flyingRef.current || !tableRef.current) return;
     flyingRef.current = true;
@@ -95,10 +114,32 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     if (hintRef.current) hintRef.current.style.opacity = '0';
 
     const w = coinRef.current!, squash = squashRef.current;
+    const H = tableRef.current.clientHeight;
+
+    if (n === 4) {
+      const targetY = landY4(targetIdx, H);
+      const targetX = targetIdx % 2 === 0 ? 25 : 75;
+      if (squash) { squash.style.animation = 'none'; void squash.offsetWidth; squash.style.animation = 'ck-spinfly .9s cubic-bezier(.5,0,.4,1)'; }
+      w.style.transition = 'none';
+      void w.offsetWidth;
+      w.style.transition = 'top .9s cubic-bezier(.45,-.1,.4,1.15), left .9s cubic-bezier(.45,-.1,.4,1.15)';
+      w.style.top = `${targetY}px`;
+      w.style.left = `${targetX}%`;
+      w.style.transform = 'translate(-50%,-50%)';
+      setTimeout(() => {
+        w.style.transition = '';
+        if (squash) squash.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite';
+        flyingRef.current = false;
+        setMood(order[targetIdx].isMe ? 'pay' : 'safe');
+        setConfetti((c) => c + 1);
+        onPaid(table.id, order[targetIdx].id);
+      }, 940);
+      return;
+    }
+
     if (squash) squash.style.animation = 'none';
     w.style.transition = 'none';
 
-    const H = tableRef.current.clientHeight;
     const Yt = COIN / 2 + MARGIN;
     const Yb = H - (COIN / 2 + MARGIN);
     const startY = fromY != null ? fromY : (hasPayer ? landY(paidIdx, H) : H / 2);
@@ -169,6 +210,8 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const onMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d.active) return;
+    if (Math.abs(e.clientY - d.startY) > 6) d.moved = true;
+    if (n === 4) return; // 2×2 doesn't support drag-to-aim
     const el = tableRef.current!;
     const rect = el.getBoundingClientRect();
     const scale = rect.height / el.clientHeight || 1;
@@ -177,12 +220,12 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     const w = coinRef.current!;
     w.style.transition = 'none';
     w.style.top = `${y}px`;
-    if (Math.abs(e.clientY - d.startY) > 6) d.moved = true;
   };
   const onUp = () => {
     const d = dragRef.current;
     if (!d.active) return;
     d.active = false;
+    if (n === 4) { glideTo(randomTarget()); return; }
     const cur = parseFloat(coinRef.current!.style.top);
     if (d.moved && !Number.isNaN(cur)) glideTo(otherTarget(), cur);
     else glideTo(otherTarget());
@@ -197,25 +240,37 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         const isPayer = hasPayer && i === paidIdx;
         const isMe = !!p.isMe;
         const named = p.name && p.name.trim().length > 0;
+        const is4 = n === 4;
+        const row4 = Math.floor(i / 2);
+        const col4 = i % 2;
+        const avatarSize = is4 ? 'sm' : n === 3 ? 'md' : 'lg';
+        const fontSize = is4 ? 17 : n === 3 ? 21 : 26;
+        const addBox = is4 ? 44 : 60;
+        const addIcon = is4 ? 18 : 24;
         return (
           <button key={p.id} onClick={() => onEditPerson(table.id, p.id)} style={{
-            position: 'absolute', left: 0, right: 0,
-            top: `${(i / n) * 100}%`, height: `${(1 / n) * 100}%`,
-            border: 'none', cursor: 'pointer', textAlign: 'center', width: '100%',
+            position: 'absolute',
+            top: is4 ? `${row4 * 50}%` : `${(i / n) * 100}%`,
+            height: is4 ? '50%' : `${(1 / n) * 100}%`,
+            left: is4 ? (col4 === 0 ? 0 : '50%') : 0,
+            right: is4 ? (col4 === 0 ? '50%' : 0) : 0,
+            ...(is4 ? {} : { width: '100%' }),
+            border: 'none', cursor: 'pointer', textAlign: 'center',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 7, padding: '0 24px', overflow: 'hidden',
+            gap: is4 ? 5 : 7, padding: '0 14px', overflow: 'hidden',
             background: p.photo ? `center/cover url(${p.photo})`
               : isPayer ? 'var(--mint-50)' : (isMe ? 'var(--surface-sunken)' : 'var(--card)'),
-            borderTop: i > 0 ? '1.5px solid var(--ink-100)' : 'none',
+            borderTop: (is4 ? row4 > 0 : i > 0) ? '1.5px solid var(--ink-100)' : 'none',
+            ...(is4 && col4 > 0 ? { borderLeft: '1.5px solid var(--ink-100)' } : {}),
             transition: 'background .3s ease',
           }}>
             {p.photo && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,27,41,.15), rgba(28,27,41,.55))' }} />}
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: is4 ? 5 : 8 }}>
               {!p.photo && (named
-                ? <Avatar name={isMe ? 'You' : p.name} size={n === 3 ? 'md' : 'lg'} ring={isPayer} />
-                : <span style={{ width: 60, height: 60, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--ink-300)', color: 'var(--ink-300)' }}><Icon name="user-plus" size={24} /></span>)}
+                ? <Avatar name={isMe ? 'You' : p.name} size={avatarSize} ring={isPayer} />
+                : <span style={{ width: addBox, height: addBox, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--ink-300)', color: 'var(--ink-300)' }}><Icon name="user-plus" size={addIcon} /></span>)}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: n === 3 ? 21 : 26, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
                   {isMe ? 'You' : (named ? p.name : 'Add name')}
                 </span>
                 {isPayer
@@ -254,7 +309,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
           {table.synced ? <Icon name="refresh-cw" size={13} style={{ color: 'var(--mint-500)' }} /> : <Icon name="link" size={13} style={{ color: 'var(--ink-300)' }} />}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          {n < 3 && <IconButton label="Add person" onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
+          {n < 4 && <IconButton label="Add person" onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
           <IconButton label="Invite" onClick={() => onInvite(table)}><Icon name="share-2" size={20} /></IconButton>
         </div>
       </div>

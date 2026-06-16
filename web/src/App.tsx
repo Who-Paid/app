@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Table } from './lib/types';
 import { useTables } from './lib/useTables';
-import { isAtLimit, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
+import { isAtLimit, isPro, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
 import { EditSheet } from './screens/EditSheet';
@@ -18,6 +18,7 @@ export default function App() {
   const [edit, setEdit] = useState<{ tableId: string; personId: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState<string | undefined>(undefined);
   const [showReview, setShowReview] = useState(false);
   const toastTimer = useRef<number | undefined>(undefined);
   const reviewTimer = useRef<number | undefined>(undefined);
@@ -109,7 +110,16 @@ export default function App() {
             onBack={() => setView('start')}
             onPaid={handlePaid}
             onEditPerson={(tid, pid) => setEdit({ tableId: tid, personId: pid })}
-            onAddPerson={(tid) => { addPerson(tid); flash('Third seat added — table splits in thirds'); }}
+            onAddPerson={(tid) => {
+            const tbl = tables.find((t) => t.id === tid);
+            if (tbl && tbl.people.length >= 3 && !isPro()) {
+              setPaywallTrigger('A 4-person table is a Pro feature. Split four ways, no sweat.');
+              setShowPaywall(true);
+              return;
+            }
+            addPerson(tid);
+            flash(tbl && tbl.people.length >= 3 ? 'Fourth seat added — splitting four ways' : 'Third seat added — table splits in thirds');
+          }}
             onInvite={onInvite}
           />
         ) : (
@@ -139,8 +149,9 @@ export default function App() {
         {showPaywall && (
           <PaywallSheet
             tableCount={tables.length}
-            onClose={() => setShowPaywall(false)}
+            onClose={() => { setShowPaywall(false); setPaywallTrigger(undefined); }}
             onTrialStarted={handleTrialStarted}
+            trigger={paywallTrigger}
           />
         )}
 
