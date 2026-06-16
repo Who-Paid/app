@@ -192,7 +192,7 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 2 }}>
             <Button variant="primary" size="lg" block onClick={save}>Save</Button>
-            {table.people.length === 3 && !person.isMe && (
+            {table.people.length >= 3 && !person.isMe && (
               <Button variant="ghost" size="md" block iconLeft={<Icon name="trash-2" size={18} />}
                 onClick={() => { onRemove(table.id, person.id); onClose(); }}
                 style={{ color: 'var(--red-500, #ef4444)' }}>
