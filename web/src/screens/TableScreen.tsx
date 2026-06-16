@@ -6,7 +6,7 @@ import { Badge } from '../components/ui/Badge';
 import { IconButton } from '../components/ui/IconButton';
 import { Icon } from '../components/ui/Icon';
 import { ShareUpIcon } from '../components/ui/ShareUpIcon';
-import { Confetti } from '../components/Confetti';
+import { HeartBurst } from '../components/HeartBurst';
 import { GoldCoin, type Mood } from '../components/GoldCoin';
 
 const COIN = 86;
@@ -48,12 +48,14 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const squashRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
   const flyingRef = useRef(false);
   const spinRef = useRef(0);
   const dragRef = useRef({ active: false, moved: false, startY: 0, startX: 0 });
   const velRef = useRef({ vx: 0, vy: 0, lastX: 0, lastY: 0, t: 0 });
-  const [confetti, setConfetti] = useState(0);
+  const [celebrate, setCelebrate] = useState<{ id: number; payerIdx: number } | null>(null);
   const [hoverBandIdx, setHoverBandIdx] = useState<number | null>(null);
+  const [dicePicking, setDicePicking] = useState(false);
   const [mood, setMood] = useState<Mood>(() => {
     if (!hasPayer) return 'idle';
     return order[paidIdx].isMe ? 'pay' : 'safe';
@@ -101,19 +103,26 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const landAt = (targetIdx: number) => {
     flyingRef.current = true;
     const w = coinRef.current!;
-    const H = tableRef.current!.clientHeight;
+    const el = tableRef.current!;
+    const H = el.clientHeight;
+    const W = el.clientWidth;
     const targetY = n === 4 ? landY4(targetIdx, H) : landY(targetIdx, H);
-    w.style.transition = 'top 0.38s cubic-bezier(.34,1.3,.64,1), left 0.38s cubic-bezier(.34,1.3,.64,1)';
+    const targetX = n === 4 ? W * (targetIdx % 2 === 0 ? 0.25 : 0.75) : W / 2;
+    const nearestUpright = Math.round(spinRef.current / 360) * 360;
+    spinRef.current = nearestUpright;
+    w.style.transition = 'top 0.38s cubic-bezier(.34,1.3,.64,1), left 0.38s cubic-bezier(.34,1.3,.64,1), transform 0.38s cubic-bezier(.34,1.3,.64,1)';
     w.style.top = `${targetY}px`;
-    w.style.left = n === 4 ? `${targetIdx % 2 === 0 ? 25 : 75}%` : '50%';
-    w.style.transform = 'translate(-50%,-50%)';
+    w.style.left = `${targetX}px`;
+    w.style.transform = `translate(-50%,-50%) rotate(${nearestUpright}deg)`;
     if (squashRef.current) squashRef.current.style.animation = 'none';
     setTimeout(() => {
       w.style.transition = '';
       flyingRef.current = false;
       if (squashRef.current) squashRef.current.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite';
       setMood(order[targetIdx].isMe ? 'pay' : 'safe');
-      setConfetti((c) => c + 1);
+      const cid2 = Date.now();
+      setCelebrate({ id: cid2, payerIdx: targetIdx });
+      setTimeout(() => setCelebrate((c) => (c && c.id === cid2 ? null : c)), 1500);
       onPaid(table.id, order[targetIdx].id);
     }, 400);
   };
@@ -149,102 +158,137 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   };
   const randomTarget = () => Math.floor(Math.random() * n);
 
-  // The coin behaves like a bouncing ball: ricochets off the top & bottom edges a
-  // few times, losing energy on each hit, then rolls to a stop on the chosen side.
-  // For the 2×2 grid (n=4) a smooth CSS arc is used instead.
-  function glideTo(targetIdx: number, fromY?: number) {
+  // The coin bounces off all four walls in 2D before landing in the target band.
+  // Direction is determined by the flick velocity (or random for a tap).
+  // The face always lands upright: spin eases to the nearest 360° multiple.
+  function glideTo(targetIdx: number) {
     if (flyingRef.current || !tableRef.current) return;
     flyingRef.current = true;
     setMood('flick');
     if (hintRef.current) hintRef.current.style.opacity = '0';
 
-    const w = coinRef.current!, squash = squashRef.current;
+    const w = coinRef.current!, sq = squashRef.current;
     const H = tableRef.current.clientHeight;
+    const W = tableRef.current.clientWidth;
 
-    if (n === 4) {
-      const targetY = landY4(targetIdx, H);
-      const targetX = targetIdx % 2 === 0 ? 25 : 75;
-      if (squash) { squash.style.animation = 'none'; void squash.offsetWidth; squash.style.animation = 'ck-spinfly .9s cubic-bezier(.5,0,.4,1)'; }
-      w.style.transition = 'none';
-      void w.offsetWidth;
-      w.style.transition = 'top .9s cubic-bezier(.45,-.1,.4,1.15), left .9s cubic-bezier(.45,-.1,.4,1.15)';
-      w.style.top = `${targetY}px`;
-      w.style.left = `${targetX}%`;
-      w.style.transform = 'translate(-50%,-50%)';
-      setTimeout(() => {
-        w.style.transition = '';
-        if (squash) squash.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite';
-        flyingRef.current = false;
-        setMood(order[targetIdx].isMe ? 'pay' : 'safe');
-        setConfetti((c) => c + 1);
-        onPaid(table.id, order[targetIdx].id);
-      }, 940);
-      return;
-    }
-
-    if (squash) squash.style.animation = 'none';
-    // Snap X back to centre — coin may have been dragged off-axis.
-    w.style.left = '50%';
+    if (sq) sq.style.animation = 'none';
     w.style.transition = 'none';
 
-    const Yt = COIN / 2 + MARGIN;
-    const Yb = H - (COIN / 2 + MARGIN);
-    const startY = fromY != null ? fromY : (hasPayer ? landY(paidIdx, H) : H / 2);
-    const targetY = landY(targetIdx, H);
+    // Current position in pixels (left may be a % from useLayoutEffect).
+    const leftRaw = w.style.left;
+    const startX = leftRaw.endsWith('%') ? W * parseFloat(leftRaw) / 100 : (parseFloat(leftRaw) || W / 2);
+    const startY = parseFloat(w.style.top) || (hasPayer ? landY(paidIdx, H) : H / 2);
 
-    const NHITS = 5;
-    let board = startY < H / 2 ? Yb : Yt;
-    const segs: { from: number; to: number; dur: number; ease: (t: number) => number; strength: number }[] = [];
-    let from = startY, dur = 230;
-    for (let k = 0; k < NHITS; k++) {
-      segs.push({ from, to: board, dur, ease: easeOutCubic, strength: Math.max(0.22, 1 - 0.17 * k) });
-      from = board;
-      board = board === Yb ? Yt : Yb;
-      dur *= 1.12;
+    // Target resting position.
+    const targetY = n === 4 ? landY4(targetIdx, H) : landY(targetIdx, H);
+    const targetX = n === 4 ? W * (targetIdx % 2 === 0 ? 0.25 : 0.75) : W / 2;
+
+    // Direction from flick velocity; random unit vector for tap.
+    let vx = velRef.current.vx, vy = velRef.current.vy;
+    const fspeed = Math.hypot(vx, vy);
+    if (fspeed < 0.05) {
+      const a = Math.random() * 2 * Math.PI;
+      vx = Math.cos(a); vy = Math.sin(a);
+    } else {
+      vx /= fspeed; vy /= fspeed;
     }
-    segs.push({ from, to: targetY, dur: Math.max(400, dur * 1.05), ease: easeOutBack, strength: 0 });
 
-    let segI = 0, segStart: number | null = null, prevY = startY, contactT = -1, contactStr = 0;
+    // Bounce walls (coin radius + margin + 44px top-bar clearance).
+    const r = COIN / 2;
+    const minX = r + MARGIN, maxX = W - r - MARGIN;
+    const minY = r + MARGIN + 44, maxY = H - r - MARGIN;
 
-    function frame(now: number) {
-      if (segStart == null) segStart = now;
-      const seg = segs[segI];
-      let t = (now - segStart) / seg.dur;
-      if (t > 1) t = 1;
-      const y = seg.from + (seg.to - seg.from) * seg.ease(t);
+    // Pre-compute bounce waypoints.
+    const N_BOUNCES = 5;
+    type WP = { x: number; y: number; dur: number; final?: boolean };
+    const wps: WP[] = [];
+    let bx = startX, by = startY, bdx = vx, bdy = vy;
 
-      spinRef.current += (y - prevY) * 0.5;
-      prevY = y;
+    for (let i = 0; i < N_BOUNCES; i++) {
+      const dtx = bdx > 0 ? (maxX - bx) / bdx : bdx < 0 ? (minX - bx) / bdx : Infinity;
+      const dty = bdy > 0 ? (maxY - by) / bdy : bdy < 0 ? (minY - by) / bdy : Infinity;
+      const dt = Math.min(Math.abs(dtx), Math.abs(dty));
+
+      const nx = Math.max(minX, Math.min(maxX, bx + bdx * dt));
+      const ny = Math.max(minY, Math.min(maxY, by + bdy * dt));
+      wps.push({ x: nx, y: ny, dur: Math.max(60, Math.hypot(nx - bx, ny - by) * 0.4) });
+
+      if (Math.abs(dtx) <= Math.abs(dty)) bdx = -bdx;
+      if (Math.abs(dty) <= Math.abs(dtx)) bdy = -bdy;
+      bx = nx; by = ny;
+      bdx *= 0.82; bdy *= 0.82;
+    }
+
+    // Final landing arc.
+    const finalDist = Math.hypot(targetX - bx, targetY - by);
+    wps.push({ x: targetX, y: targetY, dur: Math.max(340, finalDist * 0.9), final: true });
+
+    // Pre-compute total bounce distance to determine final upright rotation.
+    const SPIN_RATE = 0.42;
+    let totalBounceDist = Math.hypot(wps[0].x - startX, wps[0].y - startY);
+    for (let i = 1; i < wps.length - 1; i++) totalBounceDist += Math.hypot(wps[i].x - wps[i-1].x, wps[i].y - wps[i-1].y);
+    const spinAfterBounce = spinRef.current + totalBounceDist * SPIN_RATE;
+    // Round to nearest 360° — always forward so the face never spins backward to settle.
+    let finalSpin = Math.round(spinAfterBounce / 360) * 360;
+    if (finalSpin < spinAfterBounce - 1) finalSpin += 360;
+
+    // Animation loop.
+    let wpI = 0, wpStart: number | null = null;
+    let animX = startX, animY = startY;
+    let contactT = -1, contactStr = 0;
+
+    const frame = (now: number) => {
+      if (wpStart === null) wpStart = now;
+      const wp = wps[wpI];
+      const fromX = wpI === 0 ? startX : wps[wpI - 1].x;
+      const fromY = wpI === 0 ? startY : wps[wpI - 1].y;
+      const t = Math.min(1, (now - wpStart) / wp.dur);
+      const et = wp.final ? easeOutBack(t) : easeOutCubic(t);
+
+      const x = fromX + (wp.x - fromX) * et;
+      const y = fromY + (wp.y - fromY) * et;
+
+      // Spin: ease to upright during final arc; accumulate during bounces.
+      if (wp.final) {
+        spinRef.current = spinAfterBounce + (finalSpin - spinAfterBounce) * easeOutCubic(t);
+      } else {
+        spinRef.current += Math.hypot(x - animX, y - animY) * SPIN_RATE;
+      }
+      animX = x; animY = y;
+
       w.style.top = `${y}px`;
+      w.style.left = `${x}px`;
       w.style.transform = `translate(-50%,-50%) rotate(${spinRef.current}deg)`;
 
-      if (squash) {
+      // Squash on wall contact.
+      if (sq) {
         const s = contactT < 0 ? 0 : contactStr * Math.max(0, 1 - (now - contactT) / 160);
-        squash.style.transform = `scaleX(${1 + 0.22 * s}) scaleY(${1 - 0.22 * s})`;
+        sq.style.transform = `scaleX(${1 + 0.22 * s}) scaleY(${1 - 0.22 * s})`;
       }
 
-      if (t >= 1) {
-        if (segI < segs.length - 1) {
-          contactT = now;
-          contactStr = seg.strength;
-          segI += 1;
-          segStart = now;
-          requestAnimationFrame(frame);
-        } else {
-          if (squash) {
-            squash.style.transform = '';
-            squash.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite';
-          }
-          w.style.transition = '';
-          flyingRef.current = false;
-          setMood(order[targetIdx].isMe ? 'pay' : 'safe');
-          setConfetti((c) => c + 1);
-          onPaid(table.id, order[targetIdx].id);
-        }
+      if (t < 1) { requestAnimationFrame(frame); return; }
+
+      if (wpI < wps.length - 1) {
+        contactT = now; contactStr = Math.max(0.15, 0.9 - wpI * 0.15);
+        wpI++; wpStart = now;
+        requestAnimationFrame(frame);
         return;
       }
-      requestAnimationFrame(frame);
-    }
+
+      // Landing.
+      spinRef.current = finalSpin;
+      w.style.transform = `translate(-50%,-50%) rotate(${finalSpin}deg)`;
+      w.style.transition = '';
+      if (sq) { sq.style.transform = ''; sq.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite'; }
+      flyingRef.current = false;
+      setDicePicking(false);
+      setMood(order[targetIdx].isMe ? 'pay' : 'safe');
+      const cid = Date.now();
+      setCelebrate({ id: cid, payerIdx: targetIdx });
+      setTimeout(() => setCelebrate((c) => (c && c.id === cid ? null : c)), 1500);
+      onPaid(table.id, order[targetIdx].id);
+    };
+
     requestAnimationFrame(frame);
   }
 
@@ -259,6 +303,12 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     if (scaleRef.current) {
       scaleRef.current.style.transition = 'transform 0.12s ease-out';
       scaleRef.current.style.transform = 'scale(1.22)';
+    }
+    if (shadowRef.current) {
+      shadowRef.current.style.transition = 'transform 0.12s ease-out, opacity 0.12s ease-out, filter 0.12s ease-out';
+      shadowRef.current.style.transform = 'translate(-50%, calc(-50% + 10px)) scale(1.35)';
+      shadowRef.current.style.opacity = '0.32';
+      shadowRef.current.style.filter = 'blur(18px)';
     }
     if (squashRef.current) squashRef.current.style.animation = 'none';
     // Set initial hovered band from the grab position.
@@ -296,7 +346,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     w.style.transition = 'none';
     w.style.top = `${y}px`;
     w.style.left = `${x}px`;
-    w.style.transform = 'translate(-50%,-50%)';
+    w.style.transform = `translate(-50%,-50%) rotate(${spinRef.current}deg)`;
     setHoverBandIdx(getBandIdx(x, y, W, H));
   };
   const onUp = () => {
@@ -308,25 +358,26 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
       scaleRef.current.style.transition = 'transform 0.18s ease-in';
       scaleRef.current.style.transform = '';
     }
+    if (shadowRef.current) {
+      shadowRef.current.style.transition = 'transform 0.25s ease, opacity 0.25s ease, filter 0.25s ease';
+      shadowRef.current.style.transform = 'translate(-50%,-50%)';
+      shadowRef.current.style.opacity = '1';
+      shadowRef.current.style.filter = 'blur(11px)';
+    }
     setHoverBandIdx(null);
     if (!d.moved) {
       // Tap: bounce to a random other person.
-      glideTo(n === 4 ? randomTarget() : otherTarget());
+      glideTo(otherTarget());
       return;
     }
     // Flick detection: speed in px/s.
     const timeSince = performance.now() - velRef.current.t;
     const speed = timeSince < 150
-      ? Math.sqrt(velRef.current.vx ** 2 + velRef.current.vy ** 2) * 1000
+      ? Math.hypot(velRef.current.vx, velRef.current.vy) * 1000
       : 0;
     if (speed > 350) {
-      // Fast flick → bouncy/spin animation.
-      if (n === 4) {
-        glideTo(randomTarget());
-      } else {
-        const curY = parseFloat(coinRef.current!.style.top);
-        glideTo(otherTarget(), Number.isNaN(curY) ? undefined : curY);
-      }
+      // Fast flick → 2D bouncy animation using current velocity direction.
+      glideTo(otherTarget());
     } else {
       // Slow conscious drag → smooth land on whichever band the coin is over.
       const el = tableRef.current!;
@@ -339,7 +390,15 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
 
   return (
     <div ref={tableRef} style={{ position: 'relative', height: '100%', overflow: 'hidden', background: 'var(--surface-app)' }}>
-      {confetti > 0 && <Confetti key={confetti} count={48} />}
+      {celebrate && order.map((_, i) =>
+        i === celebrate.payerIdx ? null : (
+          <HeartBurst
+            key={`${celebrate.id}-${i}`}
+            originX={n === 4 ? (i % 2 === 0 ? '25%' : '75%') : '50%'}
+            originY={n === 4 ? `${(Math.floor(i / 2) + 0.5) / 2 * 100}%` : `${((i + 0.5) / n) * 100}%`}
+          />
+        )
+      )}
 
       {/* bands */}
       {order.map((p, i) => {
@@ -377,7 +436,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             )}
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: is4 ? 5 : 8 }}>
               {!p.photo && (named
-                ? <Avatar name={isMe ? 'You' : p.name} size={avatarSize} ring={isPayer} />
+                ? <Avatar name={isMe ? 'You' : p.name} src={p.profilePhoto ?? null} size={avatarSize} ring={isPayer} />
                 : <span style={{ width: addBox, height: addBox, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--ink-300)', color: 'var(--ink-300)' }}><Icon name="user-plus" size={addIcon} /></span>)}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
@@ -406,7 +465,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
         onClick={(e) => e.stopPropagation()}
         style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 30, cursor: 'grab', touchAction: 'none', width: COIN, height: COIN }}>
-        <div style={{ position: 'absolute', left: '50%', bottom: -13, transform: 'translateX(-50%)', width: 58, height: 12, borderRadius: '50%', background: 'rgba(28,27,41,.16)', filter: 'blur(4px)' }} />
+        <div ref={shadowRef} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: COIN * 0.86, height: COIN * 0.86, borderRadius: '50%', background: 'rgba(28,27,41,.22)', filter: 'blur(11px)', zIndex: -1 }} />
         {/* scaleRef handles the grab-scale; squashRef handles bob + squash during flight */}
         <div ref={scaleRef} style={{ transformOrigin: '50% 50%' }}>
           <div ref={squashRef} style={{ animation: 'wp-coin-idle 2.8s ease-in-out infinite', transformOrigin: '50% 50%' }}>
@@ -494,10 +553,26 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
           </button>
         </div>
       ) : (
-        <button onClick={() => !flyingRef.current && glideTo(randomTarget())} aria-label="Let the dice decide"
-          style={{ position: 'absolute', right: 16, bottom: 'calc(16px + var(--wp-pad-bottom))', zIndex: 35, width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--sun-300)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="dices" size={26} />
-        </button>
+        <div style={{ position: 'absolute', right: 16, bottom: 'calc(16px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', alignItems: 'center', gap: 10 }}>
+          {dicePicking && (
+            <span style={{
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
+              color: 'var(--ink-900)', background: 'var(--sun-300)',
+              border: '2px solid var(--ink-900)', borderRadius: 99,
+              padding: '6px 13px', whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)',
+              animation: 'wp-rise .2s ease both',
+            }}>
+              picking randomly…
+            </span>
+          )}
+          <button
+            onClick={() => { if (!flyingRef.current) { setDicePicking(true); glideTo(randomTarget()); } }}
+            aria-label="Let the dice decide"
+            style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--sun-300)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Icon name="dices" size={26} />
+          </button>
+        </div>
       )}
     </div>
   );

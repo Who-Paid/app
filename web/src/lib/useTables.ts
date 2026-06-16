@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Person, Table } from './types';
+import type { Person, Profile, Table } from './types';
 import { backend, syncEnabled } from './store';
 import { nowISO } from './util';
 
 let uid = 0;
 const newId = (p: string) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`;
 
-export function newTable(): Table {
+export function newTable(profile?: Profile | null): Table {
   const oid = newId('p');
   return {
     id: newId('t'),
@@ -17,7 +17,7 @@ export function newTable(): Table {
     updatedAt: Date.now(),
     people: [
       { id: oid, name: '', photo: null, amount: null },
-      { id: 'me', name: 'Me', isMe: true, photo: null, amount: null },
+      { id: 'me', name: 'Me', isMe: true, photo: null, profilePhoto: profile?.photo ?? null, amount: null },
     ],
   };
 }
@@ -57,8 +57,8 @@ export function useTables() {
     commit(fn(cur));
   }, [commit]);
 
-  const createTable = useCallback(() => {
-    const t = newTable();
+  const createTable = useCallback((profile?: Profile | null) => {
+    const t = newTable(profile);
     return commit(t);
   }, [commit]);
 
@@ -100,5 +100,5 @@ export function useTables() {
     patch(tableId, (t) => ({ ...t, people: t.people.filter((p) => p.id !== personId) }));
   }, [patch]);
 
-  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson };
+  return { tables, loading, syncEnabled, refresh, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson };
 }

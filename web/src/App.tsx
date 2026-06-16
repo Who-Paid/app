@@ -13,7 +13,7 @@ import { Toast } from './components/Toast';
 type View = 'start' | 'table' | 'profile';
 
 export default function App() {
-  const { tables, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
+  const { tables, loading, syncEnabled, refresh, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile>(() => {
@@ -60,11 +60,11 @@ export default function App() {
   const editTable = edit ? tables.find((t) => t.id === edit.tableId) ?? null : null;
 
   const doCreateTable = useCallback(() => {
-    const t = createTable();
+    const t = createTable(profile);
     setOpenId(t.id);
     setView('table');
     flash('New table — add who you ate with 🍽️');
-  }, [createTable, flash]);
+  }, [createTable, flash, profile]);
 
   const startNew = () => {
     if (isAtLimit(tables.length)) {
@@ -104,9 +104,27 @@ export default function App() {
     }
   };
 
+  // Keep "Me" photo in sync across all tables whenever it changes.
+  const syncProfileToTables = useCallback((photo: string | null) => {
+    tables.forEach((t) => {
+      const me = t.people.find((p) => p.isMe);
+      if (me && me.profilePhoto !== photo) savePerson(t.id, me.id, { profilePhoto: photo });
+    });
+  }, [tables, savePerson]);
+
+  // On first load, push any saved profile photo to tables that pre-date the profile.
+  const didInitSync = useRef(false);
+  useEffect(() => {
+    if (loading || didInitSync.current) return;
+    didInitSync.current = true;
+    syncProfileToTables(profile.photo);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
   const onSaveProfile = (next: Profile) => {
     setProfile(next);
     try { localStorage.setItem('wp-profile', JSON.stringify(next)); } catch { /* ignore */ }
+    syncProfileToTables(next.photo);
     setView('start');
     flash('Profile saved ✓');
   };
@@ -138,7 +156,7 @@ export default function App() {
           <div style={{ height: '100%', overflow: 'auto' }}>
             <StartScreen
               tables={tables}
-              onOpen={(id) => { setOpenId(id); setView('table'); }}
+              onOpen={(id) => { setOpenId(id); setView('table'); void refresh(); }}
               onNew={startNew}
               onDelete={deleteTable}
               status={status}
