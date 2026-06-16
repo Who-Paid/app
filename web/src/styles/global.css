@@ -139,6 +139,7 @@ button { font: inherit; }
 @keyframes wp-toast-rise { from { transform: translate(-50%,14px); opacity: 0; } to { transform: translate(-50%,0); opacity: 1; } }
 
 @keyframes ck-spinfly { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(540deg) scale(1.06); } 100% { transform: rotate(1080deg) scale(1); } }
+@keyframes wp-share-pulse { 0% { transform: scale(1); opacity: .8; } 70%, 100% { transform: scale(1.5); opacity: 0; } }
 
 /* ---- GoldCoin face animations ---- */
 @keyframes ck-eye-l  { 0%,100% { transform: translate(0,0); } 25% { transform: translate(2px,2px); } 55% { transform: translate(-2px,1px); } 80% { transform: translate(1px,-2px); } }

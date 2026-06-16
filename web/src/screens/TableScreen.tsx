@@ -5,6 +5,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { IconButton } from '../components/ui/IconButton';
 import { Icon } from '../components/ui/Icon';
+import { ShareUpIcon } from '../components/ui/ShareUpIcon';
 import { Confetti } from '../components/Confetti';
 import { GoldCoin, type Mood } from '../components/GoldCoin';
 
@@ -27,6 +28,22 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const title = otherNames.join(' & ') || 'New table';
   const paidIdx = order.findIndex((p) => p.id === table.paidBy);
   const hasPayer = paidIdx >= 0;
+
+  const other = order.find((p) => !p.isMe);
+  const showSyncNudge = !table.synced && !!(other && other.name && other.name.trim());
+
+  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
+    try { return !!localStorage.getItem(`sync-nudge-${table.id}`); } catch { return false; }
+  });
+  const showNudge = showSyncNudge && !nudgeDismissed;
+
+  const handleInvite = () => {
+    if (showNudge) {
+      setNudgeDismissed(true);
+      try { localStorage.setItem(`sync-nudge-${table.id}`, '1'); } catch { /* ignore */ }
+    }
+    onInvite(table);
+  };
 
   const tableRef = useRef<HTMLDivElement>(null);
   const coinRef = useRef<HTMLDivElement>(null);
@@ -275,14 +292,16 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                 </span>
                 {isPayer
                   ? <Badge color="mint" solid dot>paid last · {paidLabel(table.paidAt)}</Badge>
-                  : p.amount != null
-                    ? <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                        <span className="wp-amount" style={{ fontSize: 14, color: p.photo ? '#fff' : 'var(--text-muted)' }}>${p.amount.toFixed(2)}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.55)' : 'var(--text-faint)', letterSpacing: '0.02em' }}>+ add payment</span>
-                      </div>
-                    : <span style={{ fontSize: 12.5, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--text-faint)' }}>
-                        <Icon name="image-plus" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />tap to edit
-                      </span>}
+                  : (showNudge && !isMe && named)
+                    ? <Badge color="neutral" dot><ShareUpIcon size={12} style={{ verticalAlign: '-1px', marginRight: 3 }} />not in sync</Badge>
+                    : p.amount != null
+                      ? <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                          <span className="wp-amount" style={{ fontSize: 14, color: p.photo ? '#fff' : 'var(--text-muted)' }}>${p.amount.toFixed(2)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.55)' : 'var(--text-faint)', letterSpacing: '0.02em' }}>+ add payment</span>
+                        </div>
+                      : <span style={{ fontSize: 12.5, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--text-faint)' }}>
+                          <Icon name="image-plus" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />tap to edit
+                        </span>}
               </div>
             </div>
           </button>
@@ -310,9 +329,63 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {n < 4 && <IconButton label="Add person" onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
-          <IconButton label="Invite" onClick={() => onInvite(table)}><Icon name="share-2" size={20} /></IconButton>
+          <div style={{ position: 'relative' }}>
+            {showNudge && (
+              <span style={{
+                position: 'absolute', inset: -3, borderRadius: 999, pointerEvents: 'none',
+                border: '2px solid var(--mint-400)',
+                animation: 'wp-share-pulse 1.8s ease-out infinite',
+              }} />
+            )}
+            <IconButton
+              label="Invite"
+              onClick={handleInvite}
+              style={showNudge ? { background: 'var(--mint-50)' } : undefined}
+            >
+              <ShareUpIcon size={20} />
+            </IconButton>
+          </div>
         </div>
       </div>
+
+      {/* sync nudge tooltip */}
+      {showNudge && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(var(--wp-pad-top) + 60px)',
+          right: 14,
+          zIndex: 40,
+          maxWidth: 226,
+          pointerEvents: 'none',
+        }}>
+          {/* caret pointing up toward the share button */}
+          <div style={{
+            position: 'absolute',
+            top: -7,
+            right: 15,
+            width: 14,
+            height: 14,
+            background: 'var(--ink-900)',
+            transform: 'rotate(45deg)',
+            borderRadius: 2,
+          }} />
+          <div style={{
+            background: 'var(--ink-900)',
+            color: 'var(--paper)',
+            borderRadius: 16,
+            padding: '12px 14px',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, lineHeight: 1.3 }}>
+              Share table with {other!.name} to be in sync
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--mint-300)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <ShareUpIcon size={12} />
+              The coin's a shared responsibility ;-)
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* dice */}
       {!hasPayer ? (
