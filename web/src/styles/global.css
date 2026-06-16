@@ -97,6 +97,7 @@ button { font: inherit; }
 .wp-avatar--sm { width: 36px; height: 36px; font-size: 14px; }
 .wp-avatar--md { width: 48px; height: 48px; font-size: 18px; }
 .wp-avatar--lg { width: 64px; height: 64px; font-size: 24px; }
+.wp-avatar--xl { width: 84px; height: 84px; font-size: 32px; }
 
 /* ---- Badge ---- */
 .wp-badge {

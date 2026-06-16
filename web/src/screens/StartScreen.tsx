@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Table } from '../lib/types';
+import type { Profile, Table } from '../lib/types';
 import type { ProStatus } from '../lib/pro';
 import { FREE_TABLE_LIMIT, trialDaysLeft } from '../lib/pro';
 import { paidLabel } from '../lib/util';
@@ -34,8 +34,11 @@ function MiniTable({ table }: { table: Table }) {
 }
 
 export function StartScreen({
-  tables, onOpen, onNew, onDelete, status,
-}: { tables: Table[]; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void; status: ProStatus }) {
+  tables, onOpen, onNew, onDelete, status, profile, onProfile,
+}: {
+  tables: Table[]; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void;
+  status: ProStatus; profile: Profile; onProfile: () => void;
+}) {
   const atLimit = status === 'free' && tables.length >= FREE_TABLE_LIMIT;
   const [confirmId, setConfirmId] = useState<string | null>(null);
   return (
@@ -61,7 +64,13 @@ export function StartScreen({
             )}
           </div>
         </div>
-        <Avatar name="You" size="md" ring />
+        <button
+          onClick={onProfile}
+          aria-label="Your profile"
+          style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', borderRadius: 999, display: 'flex' }}
+        >
+          <Avatar name={profile.name || 'You'} src={profile.photo} size="md" ring />
+        </button>
       </div>
 
       {/* hero */}

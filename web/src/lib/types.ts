@@ -1,3 +1,8 @@
+export interface Profile {
+  name: string;
+  photo: string | null;
+}
+
 export interface Payment {
   id: string;
   amount: number;

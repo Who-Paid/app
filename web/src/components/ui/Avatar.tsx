@@ -1,6 +1,6 @@
 import { avatarColor, initials } from '../../lib/util';
 
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg' | 'xl';
 
 export function Avatar({
   name = '', src = null, size = 'md', ring = false,

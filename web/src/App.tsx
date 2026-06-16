@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Table } from './lib/types';
+import type { Profile, Table } from './lib/types';
 import { useTables } from './lib/useTables';
 import { isAtLimit, isPro, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
 import { EditSheet } from './screens/EditSheet';
 import { PaywallSheet } from './screens/PaywallSheet';
 import { ReviewPrompt } from './screens/ReviewPrompt';
 import { Toast } from './components/Toast';
 
-type View = 'start' | 'table';
+type View = 'start' | 'table' | 'profile';
 
 export default function App() {
   const { tables, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Profile>(() => {
+    try { const s = localStorage.getItem('wp-profile'); if (s) return JSON.parse(s); } catch { /* ignore */ }
+    return { name: 'You', photo: null };
+  });
   const [edit, setEdit] = useState<{ tableId: string; personId: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -99,6 +104,13 @@ export default function App() {
     }
   };
 
+  const onSaveProfile = (next: Profile) => {
+    setProfile(next);
+    try { localStorage.setItem('wp-profile', JSON.stringify(next)); } catch { /* ignore */ }
+    setView('start');
+    flash('Profile saved ✓');
+  };
+
   const status = proStatus();
 
   return (
@@ -130,6 +142,8 @@ export default function App() {
               onNew={startNew}
               onDelete={deleteTable}
               status={status}
+              profile={profile}
+              onProfile={() => setView('profile')}
             />
           </div>
         )}
@@ -157,6 +171,14 @@ export default function App() {
 
         {showReview && (
           <ReviewPrompt onClose={() => setShowReview(false)} />
+        )}
+
+        {view === 'profile' && (
+          <ProfileScreen
+            profile={profile}
+            onBack={() => setView('start')}
+            onSave={onSaveProfile}
+          />
         )}
       </div>
     </div>
