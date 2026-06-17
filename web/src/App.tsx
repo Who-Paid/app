@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Profile, Table } from './lib/types';
-import { useTables } from './lib/useTables';
+import { useTables, getClaimedSeat } from './lib/useTables';
 import { isAtLimit, isPro, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
@@ -11,11 +11,12 @@ import { ReviewPrompt } from './screens/ReviewPrompt';
 import { Toast } from './components/Toast';
 import { ShareLanding } from './screens/ShareLanding';
 import { OnboardingSheet } from './screens/OnboardingSheet';
+import { ClaimSeat } from './screens/ClaimSeat';
 
 type View = 'start' | 'table' | 'profile';
 
 export default function App() {
-  const { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
+  const { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, claimSeat, deleteTable, removePerson } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile>(() => {
@@ -30,6 +31,7 @@ export default function App() {
   const [showInviteLanding, setShowInviteLanding] = useState(() =>
     new URLSearchParams(window.location.search).has('share')
   );
+  const [claimTableId, setClaimTableId] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(() => {
     if (new URLSearchParams(window.location.search).has('share')) return false;
     if (localStorage.getItem('wp-onboarded')) return false;
@@ -65,7 +67,11 @@ export default function App() {
       if (t) {
         setOpenId(id);
         setView('table');
-        flash(syncEnabled ? 'Joined a shared table 🔗' : 'Opened a shared table');
+        if (t.people.length > 2 && !getClaimedSeat(t.id)) {
+          setClaimTableId(t.id);
+        } else {
+          flash(syncEnabled ? 'Joined a shared table 🔗' : 'Opened a shared table');
+        }
       } else {
         flash("That table link isn't available");
       }
@@ -203,6 +209,21 @@ export default function App() {
         )}
 
         <Toast msg={toast} />
+
+        {claimTableId && (() => {
+          const ct = tables.find((t) => t.id === claimTableId);
+          return ct ? (
+            <ClaimSeat
+              table={ct}
+              onClaim={(pid) => {
+                claimSeat(ct.id, pid);
+                const nm = ct.people.find((p) => p.id === pid)?.name || 'you';
+                setClaimTableId(null);
+                flash(`You're in as ${nm} 🎉`);
+              }}
+            />
+          ) : null;
+        })()}
 
         {showInviteLanding && (
           <ShareLanding

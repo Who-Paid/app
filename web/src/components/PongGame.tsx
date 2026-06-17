@@ -182,7 +182,7 @@ function drawPaddles(canvas: HTMLCanvasElement, gs: GS, topColor: string, botCol
 // ─── component ────────────────────────────────────────────────────────────────
 
 export function PongGame({
-  topName, botName, topColor, botColor, target = 3, onResult, onExit,
+  topColor, botColor, target = 3, onResult, onExit,
 }: Props) {
   const wrapRef      = useRef<HTMLDivElement>(null);
   const canvasRef    = useRef<HTMLCanvasElement>(null);
@@ -459,7 +459,6 @@ export function PongGame({
   // ── derived render values ─────────────────────────────────────────────────
 
   const loserSide: 'top' | 'bot' = hud.winner === 'top' ? 'bot' : 'top';
-  const loserName = hud.winner === 'top' ? botName : topName;
   const showScore = hud.phase === 'play' || (hud.phase === 'countdown' && (hud.topScore > 0 || hud.botScore > 0));
 
   // ── render ────────────────────────────────────────────────────────────────
@@ -575,9 +574,6 @@ export function PongGame({
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 40, fontWeight: 700, color: 'var(--ink-900)', lineHeight: 1.1 }}>
               {hud.topScore} – {hud.botScore}
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-900)', marginTop: 4 }}>
-              {loserName} pays 😬
             </div>
             <button
               onClick={() => onResult(loserSide)}
