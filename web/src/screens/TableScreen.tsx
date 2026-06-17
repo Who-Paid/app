@@ -72,6 +72,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const scaleRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
   const flyingRef = useRef(false);
+  const justLandedRef = useRef(false); // skip one useLayoutEffect re-position after a manual drag
   const spinRef = useRef(0);
   const dragRef = useRef({ active: false, moved: false, startY: 0, startX: 0 });
   const velRef = useRef({ vx: 0, vy: 0, lastX: 0, lastY: 0, t: 0 });
@@ -199,6 +200,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
       const cid2 = Date.now();
       setCelebrate({ id: cid2, payerIdx: targetIdx });
       setTimeout(() => setCelebrate((c) => (c && c.id === cid2 ? null : c)), 1500);
+      justLandedRef.current = true;
       onPaid(table.id, order[targetIdx].id);
     }, 400);
   };
@@ -206,6 +208,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   // Imperatively position the coin so React re-renders don't fight the rAF loop.
   useLayoutEffect(() => {
     if (flyingRef.current) return;
+    if (justLandedRef.current) { justLandedRef.current = false; return; }
     const el = tableRef.current, w = coinRef.current;
     if (!el || !w) return;
     const H = el.clientHeight;
@@ -511,7 +514,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             )}
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: is4 ? 5 : 8 }}>
               {!p.photo && (named
-                ? <Avatar name={isMe ? 'You' : p.name} src={p.profilePhoto ?? null} size={avatarSize} ring={isPayer} />
+                ? <Avatar name={p.name || 'Me'} src={p.profilePhoto ?? null} size={avatarSize} ring={isPayer} />
                 : <span style={{ width: addBox, height: addBox, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--ink-300)', color: 'var(--ink-300)' }}><Icon name="user-plus" size={addIcon} /></span>)}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                 {isInlineEdit ? (
@@ -540,9 +543,14 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                     }}
                   />
                 ) : (
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
-                    {isMe ? 'You' : (named ? p.name : 'Add name')}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
+                      {named ? p.name : (isMe ? 'You' : 'Add name')}
+                    </span>
+                    {isMe && named && (
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: Math.max(10, fontSize * 0.5), letterSpacing: '0.05em', color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--mint-700)', background: p.photo ? 'rgba(255,255,255,.2)' : 'var(--mint-50)', borderRadius: 6, padding: '2px 6px', lineHeight: 1.4 }}>me</span>
+                    )}
+                  </div>
                 )}
                 {isPayer
                   ? <Badge color="mint" solid dot>paid last · {paidLabel(table.paidAt)}</Badge>
