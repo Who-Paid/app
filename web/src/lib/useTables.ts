@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Person, Table } from './types';
+import type { Person, Profile, Table } from './types';
 import { backend, syncEnabled } from './store';
 import { nowISO } from './util';
 
 let uid = 0;
 const newId = (p: string) => `${p}${Date.now().toString(36)}${(uid++).toString(36)}`;
 
-export function newTable(): Table {
+export function newTable(profile?: Profile | null): Table {
   const oid = newId('p');
   return {
     id: newId('t'),
@@ -17,7 +17,7 @@ export function newTable(): Table {
     updatedAt: Date.now(),
     people: [
       { id: oid, name: '', photo: null, amount: null },
-      { id: 'me', name: 'Me', isMe: true, photo: null, amount: null },
+      { id: 'me', name: 'Me', isMe: true, photo: null, profilePhoto: profile?.photo ?? null, amount: null },
     ],
   };
 }
@@ -36,8 +36,7 @@ export function useTables() {
 
   useEffect(() => {
     refresh();
-    const unsub = backend.subscribe(refresh);
-    return unsub;
+    return backend.subscribe(refresh);
   }, [refresh]);
 
   // Persist + optimistic local update.
@@ -58,8 +57,8 @@ export function useTables() {
     commit(fn(cur));
   }, [commit]);
 
-  const createTable = useCallback(() => {
-    const t = newTable();
+  const createTable = useCallback((profile?: Profile | null) => {
+    const t = newTable(profile);
     return commit(t);
   }, [commit]);
 
@@ -76,7 +75,7 @@ export function useTables() {
 
   const addPerson = useCallback((tableId: string) => {
     patch(tableId, (t) => {
-      if (t.people.length >= 3) return t;
+      if (t.people.length >= 4) return t;
       const me = t.people.find((p) => p.isMe)!;
       const others = t.people.filter((p) => !p.isMe);
       return { ...t, people: [...others, { id: newId('p'), name: '', photo: null, amount: null }, me] };
@@ -97,5 +96,9 @@ export function useTables() {
     void backend.delete(tableId);
   }, []);
 
-  return { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable };
+  const removePerson = useCallback((tableId: string, personId: string) => {
+    patch(tableId, (t) => ({ ...t, people: t.people.filter((p) => p.id !== personId) }));
+  }, [patch]);
+
+  return { tables, loading, syncEnabled, refresh, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson };
 }

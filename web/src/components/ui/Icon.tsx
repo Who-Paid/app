@@ -1,6 +1,6 @@
 import {
   Plus, UserPlus, ArrowLeft, RefreshCw, Link as LinkIcon, Share2, Dices,
-  X, Camera, Coins, ImagePlus, Check, Trash2, type LucideProps,
+  X, Camera, Coins, ImagePlus, Check, Trash2, Lock, type LucideProps,
 } from 'lucide-react';
 
 const MAP = {
@@ -17,6 +17,7 @@ const MAP = {
   'image-plus': ImagePlus,
   check: Check,
   'trash-2': Trash2,
+  lock: Lock,
 } as const;
 
 export type IconName = keyof typeof MAP;
