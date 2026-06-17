@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Person, Profile, Table } from './types';
-import { backend, syncEnabled } from './store';
+import { backend, syncEnabled, setAuthUserId } from './store';
 import { nowISO } from './util';
 
 let uid = 0;
@@ -200,5 +200,17 @@ export function useTables() {
     patch(tableId, (t) => ({ ...t, people: t.people.filter((p) => p.id !== personId) }));
   }, [patch]);
 
-  return { tables, loading, syncEnabled, refresh, createTable, setPaid, savePerson, addPerson, joinByInvite, claimSeat, deleteTable, removePerson };
+  // Called once when the user signs in. Stamps user.id onto all existing tables
+  // so the backend can find them by either device id or real user id.
+  const migrateToUser = useCallback(async (userId: string) => {
+    setAuthUserId(userId);
+    await backend.migrate(userId);
+    await refresh();
+  }, [refresh]);
+
+  const onSignOut = useCallback(() => {
+    setAuthUserId(null);
+  }, []);
+
+  return { tables, loading, syncEnabled, refresh, createTable, setPaid, savePerson, addPerson, joinByInvite, claimSeat, deleteTable, removePerson, migrateToUser, onSignOut };
 }

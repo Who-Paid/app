@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import type { Profile, Table } from './lib/types';
 import { useTables, getClaimedSeat } from './lib/useTables';
+import { onAuthStateChange } from './lib/auth';
 import { isAtLimit, isPro, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
@@ -12,11 +14,12 @@ import { Toast } from './components/Toast';
 import { ShareLanding } from './screens/ShareLanding';
 import { OnboardingSheet } from './screens/OnboardingSheet';
 import { ClaimSeat } from './screens/ClaimSeat';
+import { AuthSheet } from './screens/AuthSheet';
 
 type View = 'start' | 'table' | 'profile';
 
 export default function App() {
-  const { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, claimSeat, deleteTable, removePerson } = useTables();
+  const { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, claimSeat, deleteTable, removePerson, migrateToUser, onSignOut } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile>(() => {
@@ -32,6 +35,25 @@ export default function App() {
     new URLSearchParams(window.location.search).has('share')
   );
   const [claimTableId, setClaimTableId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [showAuthSheet, setShowAuthSheet] = useState(false);
+  const prevUserRef = useRef<User | null>(null);
+
+  useEffect(() => {
+    return onAuthStateChange((next) => {
+      const prev = prevUserRef.current;
+      prevUserRef.current = next;
+      setUser(next);
+      if (next && !prev) {
+        // Signed in from anonymous — migrate tables and set member id.
+        void migrateToUser(next.id);
+      } else if (!next && prev) {
+        onSignOut();
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [showWelcome, setShowWelcome] = useState(() => {
     if (new URLSearchParams(window.location.search).has('share')) return false;
     if (localStorage.getItem('wp-onboarded')) return false;
@@ -204,6 +226,8 @@ export default function App() {
               status={status}
               profile={profile}
               onProfile={() => setView('profile')}
+              isLoggedIn={!!user}
+              onSignIn={() => setShowAuthSheet(true)}
             />
           </div>
         )}
@@ -265,6 +289,10 @@ export default function App() {
 
         {showWelcome && (
           <OnboardingSheet onDone={onWelcomeDone} />
+        )}
+
+        {showAuthSheet && (
+          <AuthSheet onDismiss={() => setShowAuthSheet(false)} />
         )}
       </div>
     </div>

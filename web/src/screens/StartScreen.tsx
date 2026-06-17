@@ -36,14 +36,16 @@ function MiniTable({ table }: { table: Table }) {
 }
 
 export function StartScreen({
-  tables, onOpen, onNew, onDelete, status, profile, onProfile,
+  tables, onOpen, onNew, onDelete, status, profile, onProfile, isLoggedIn, onSignIn,
 }: {
   tables: Table[]; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void;
   status: ProStatus; profile: Profile; onProfile: () => void;
+  isLoggedIn: boolean; onSignIn: () => void;
 }) {
   const { t } = useTranslation();
   const atLimit = status === 'free' && tables.length >= FREE_TABLE_LIMIT;
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
   return (
     <div style={{
       padding: 'calc(var(--wp-pad-top) + 8px) 20px calc(var(--wp-pad-bottom) + 14px)',
@@ -104,6 +106,41 @@ export function StartScreen({
       {/* existing tables */}
       <div>
         <div className="wp-eyebrow" style={{ marginBottom: 12 }}>{t('start.yourTables')}</div>
+
+        {/* sign-in nudge — shown when anonymous and at least one table exists */}
+        {!isLoggedIn && !nudgeDismissed && tables.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'var(--sun-50)', border: '1.5px solid var(--sun-300)',
+            borderRadius: 'var(--radius-md)', padding: '10px 12px', marginBottom: 14,
+          }}>
+            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: 'var(--ink-700)', lineHeight: 1.4 }}>
+              Sign in with Apple to back up your tables.
+            </span>
+            <button
+              onClick={onSignIn}
+              style={{
+                background: 'var(--ink-900)', color: '#fff', border: 'none',
+                borderRadius: 'var(--radius-pill)', padding: '7px 13px',
+                fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13,
+                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => setNudgeDismissed(true)}
+              aria-label="Dismiss"
+              style={{
+                background: 'none', border: 'none', padding: '4px', cursor: 'pointer',
+                color: 'var(--text-faint)', lineHeight: 0, flexShrink: 0,
+              }}
+            >
+              <Icon name="x" size={15} />
+            </button>
+          </div>
+        )}
+
         {tables.length === 0 ? (
           <p style={{ color: 'var(--text-faint)', fontWeight: 600, fontSize: 14 }}>
             {t('start.noTables')}
