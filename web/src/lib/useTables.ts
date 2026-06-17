@@ -17,7 +17,7 @@ export function newTable(profile?: Profile | null): Table {
     updatedAt: Date.now(),
     people: [
       { id: oid, name: '', photo: null, amount: null },
-      { id: 'me', name: 'Me', isMe: true, photo: null, profilePhoto: profile?.photo ?? null, amount: null },
+      { id: 'me', name: profile?.name ?? '', isMe: true, photo: null, profilePhoto: profile?.photo ?? null, amount: null },
     ],
   };
 }

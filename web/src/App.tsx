@@ -10,6 +10,7 @@ import { PaywallSheet } from './screens/PaywallSheet';
 import { ReviewPrompt } from './screens/ReviewPrompt';
 import { Toast } from './components/Toast';
 import { ShareLanding } from './screens/ShareLanding';
+import { OnboardingSheet } from './screens/OnboardingSheet';
 
 type View = 'start' | 'table' | 'profile';
 
@@ -29,6 +30,22 @@ export default function App() {
   const [showInviteLanding, setShowInviteLanding] = useState(() =>
     new URLSearchParams(window.location.search).has('share')
   );
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (new URLSearchParams(window.location.search).has('share')) return false;
+    if (localStorage.getItem('wp-onboarded')) return false;
+    // Returning user who already set a name doesn't need onboarding
+    try {
+      const s = localStorage.getItem('wp-profile');
+      if (s) {
+        const p = JSON.parse(s) as { name?: string };
+        if (p.name && p.name !== 'You') {
+          localStorage.setItem('wp-onboarded', '1');
+          return false;
+        }
+      }
+    } catch { /* ignore */ }
+    return true;
+  });
   const toastTimer = useRef<number | undefined>(undefined);
   const reviewTimer = useRef<number | undefined>(undefined);
 
@@ -107,29 +124,44 @@ export default function App() {
     }
   };
 
-  // Keep "Me" photo in sync across all tables whenever it changes.
-  const syncProfileToTables = useCallback((photo: string | null) => {
+  // Keep "Me" name + photo in sync across all tables whenever the profile changes.
+  const syncProfileToTables = useCallback((next: Profile) => {
     tables.forEach((t) => {
       const me = t.people.find((p) => p.isMe);
-      if (me && me.profilePhoto !== photo) savePerson(t.id, me.id, { profilePhoto: photo });
+      if (!me) return;
+      const updates: Partial<(typeof me)> = {};
+      if (me.profilePhoto !== next.photo) updates.profilePhoto = next.photo;
+      if (me.name !== next.name) updates.name = next.name;
+      if (Object.keys(updates).length > 0) savePerson(t.id, me.id, updates);
     });
   }, [tables, savePerson]);
 
-  // On first load, push any saved profile photo to tables that pre-date the profile.
+  // On first load, push saved profile name + photo to tables that pre-date the profile.
   const didInitSync = useRef(false);
   useEffect(() => {
     if (loading || didInitSync.current) return;
     didInitSync.current = true;
-    syncProfileToTables(profile.photo);
+    syncProfileToTables(profile);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const onSaveProfile = (next: Profile) => {
     setProfile(next);
     try { localStorage.setItem('wp-profile', JSON.stringify(next)); } catch { /* ignore */ }
-    syncProfileToTables(next.photo);
+    syncProfileToTables(next);
     setView('start');
     flash('Profile saved ✓');
+  };
+
+  const onWelcomeDone = (name?: string) => {
+    if (name) {
+      const next = { ...profile, name };
+      setProfile(next);
+      try { localStorage.setItem('wp-profile', JSON.stringify(next)); } catch { /* ignore */ }
+      syncProfileToTables(next);
+    }
+    localStorage.setItem('wp-onboarded', '1');
+    setShowWelcome(false);
   };
 
   const status = proStatus();
@@ -208,6 +240,10 @@ export default function App() {
             onBack={() => setView('start')}
             onSave={onSaveProfile}
           />
+        )}
+
+        {showWelcome && (
+          <OnboardingSheet onDone={onWelcomeDone} />
         )}
       </div>
     </div>
