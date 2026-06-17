@@ -14,7 +14,7 @@ import { ShareLanding } from './screens/ShareLanding';
 type View = 'start' | 'table' | 'profile';
 
 export default function App() {
-  const { tables, loading, syncEnabled, refresh, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
+  const { tables, loading, syncEnabled, createTable, setPaid, savePerson, addPerson, joinByInvite, deleteTable, removePerson } = useTables();
   const [view, setView] = useState<View>('start');
   const [openId, setOpenId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile>(() => {
@@ -161,7 +161,7 @@ export default function App() {
           <div style={{ height: '100%', overflow: 'auto' }}>
             <StartScreen
               tables={tables}
-              onOpen={(id) => { setOpenId(id); setView('table'); void refresh(); }}
+              onOpen={(id) => { setOpenId(id); setView('table'); }}
               onNew={startNew}
               onDelete={deleteTable}
               status={status}

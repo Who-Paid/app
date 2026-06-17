@@ -47,6 +47,9 @@ interface GS {
   pointers: Map<number, 'top' | 'bot'>;
   ctrlTop: number | null;
   ctrlBot: number | null;
+  // whether each player has moved their paddle (hides arrows once they do)
+  topMoved: boolean;
+  botMoved: boolean;
   // lifecycle
   rafId: number;
   lastTime: number;
@@ -61,16 +64,17 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 function makeGS(W: number, H: number, target: number): GS {
   const padH = 13, inset = 32;
-  const padW = clamp(W * 0.30, 58, 168);
+  const padW = clamp(W * 0.15, 29, 84);  // half-width paddle
   const ballR = W * 0.075;
-  const baseSpeed = Math.max(440, H * 0.72);
+  const baseSpeed = Math.max(660, H * 1.1);  // faster ball
   return {
     W, H, padW, padH, inset,
     topSurf: inset + padH,
     botSurf: H - inset - padH,
     ballR,
-    topX: W / 2, topTargetX: W / 2,
-    botX: W / 2, botTargetX: W / 2,
+    // offset paddles left/right so players can see them and know to move
+    topX: W * 0.35, topTargetX: W * 0.35,
+    botX: W * 0.65, botTargetX: W * 0.65,
     bx: W / 2, by: H / 2, bvx: 0, bvy: 0,
     topScore: 0, botScore: 0,
     phase: 'countdown', serveTo: 'bot',
@@ -79,6 +83,7 @@ function makeGS(W: number, H: number, target: number): GS {
     target, winner: null,
     rotDeg: 0, prevBx: W / 2, prevBy: H / 2,
     pointers: new Map(), ctrlTop: null, ctrlBot: null,
+    topMoved: false, botMoved: false,
     rafId: 0, lastTime: 0, audioCtx: null,
     lastHudKey: '',
   };
@@ -172,10 +177,14 @@ function drawPaddles(canvas: HTMLCanvasElement, gs: GS, topColor: string, botCol
 export function PongGame({
   topName, botName, topColor, botColor, target = 3, onResult, onExit,
 }: Props) {
-  const wrapRef  = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const coinRef  = useRef<HTMLDivElement>(null);
-  const gsRef    = useRef<GS | null>(null);
+  const wrapRef      = useRef<HTMLDivElement>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const coinRef      = useRef<HTMLDivElement>(null);
+  const topCountRef  = useRef<HTMLDivElement>(null);
+  const botCountRef  = useRef<HTMLDivElement>(null);
+  const topArrowsRef = useRef<HTMLDivElement>(null);
+  const botArrowsRef = useRef<HTMLDivElement>(null);
+  const gsRef        = useRef<GS | null>(null);
   const [hud, setHud] = useState<HUD>({ topScore: 0, botScore: 0, phase: 'countdown', count: 3, winner: null });
   const [coinSize, setCoinSize] = useState(58);
 
@@ -290,6 +299,38 @@ export function PongGame({
       drawPaddles(canvas, gs, topColor, botColor);
       coinEl.style.transform = `translate(-50%,-50%) translate(${gs.bx}px,${gs.by}px) rotate(${gs.rotDeg}deg)`;
 
+      // Update countdown numbers and arrows imperatively, tracking each paddle's X
+      const showCount = gs.phase === 'countdown';
+      const tX = `translateX(${gs.topX}px) translateX(-50%)`;
+      const bX = `translateX(${gs.botX}px) translateX(-50%)`;
+
+      if (topCountRef.current) {
+        const el = topCountRef.current;
+        el.style.display = showCount ? 'block' : 'none';
+        if (showCount) {
+          el.style.transform = `${tX} rotate(180deg)`;
+          el.textContent = String(countNum);
+        }
+      }
+      if (botCountRef.current) {
+        const el = botCountRef.current;
+        el.style.display = showCount ? 'block' : 'none';
+        if (showCount) {
+          el.style.transform = bX;
+          el.textContent = String(countNum);
+        }
+      }
+      if (topArrowsRef.current) {
+        const showArrows = showCount && !gs.topMoved;
+        topArrowsRef.current.style.display = showArrows ? 'flex' : 'none';
+        if (showArrows) topArrowsRef.current.style.transform = `${tX} rotate(180deg)`;
+      }
+      if (botArrowsRef.current) {
+        const showArrows = showCount && !gs.botMoved;
+        botArrowsRef.current.style.display = showArrows ? 'flex' : 'none';
+        if (showArrows) botArrowsRef.current.style.transform = bX;
+      }
+
       pushHud(countNum);
     }
 
@@ -306,11 +347,11 @@ export function PongGame({
       gs.bvx *= sx; gs.bvy *= sy;
       gs.prevBx *= sx; gs.prevBy *= sy;
       gs.W = nW; gs.H = nH;
-      gs.padW = clamp(nW * 0.30, 58, 168);
+      gs.padW = clamp(nW * 0.15, 29, 84);
       gs.topSurf = gs.inset + gs.padH;
       gs.botSurf = nH - gs.inset - gs.padH;
       gs.ballR = nW * 0.075;
-      gs.baseSpeed = Math.max(440, nH * 0.72);
+      gs.baseSpeed = Math.max(660, nH * 1.1);
       const dpr2 = window.devicePixelRatio || 1;
       canvas.width = nW * dpr2;
       canvas.height = nH * dpr2;
@@ -359,8 +400,8 @@ export function PongGame({
     if (side === 'top' && gs.ctrlTop === null) gs.ctrlTop = e.pointerId;
     if (side === 'bot' && gs.ctrlBot === null) gs.ctrlBot = e.pointerId;
     const cx = clamp(x, gs.padW / 2, gs.W - gs.padW / 2);
-    if (gs.ctrlTop === e.pointerId) gs.topTargetX = cx;
-    if (gs.ctrlBot === e.pointerId) gs.botTargetX = cx;
+    if (gs.ctrlTop === e.pointerId) { gs.topTargetX = cx; gs.topMoved = true; }
+    if (gs.ctrlBot === e.pointerId) { gs.botTargetX = cx; gs.botMoved = true; }
     e.currentTarget.setPointerCapture(e.pointerId);
     if (!gs.audioCtx) {
       try {
@@ -375,8 +416,8 @@ export function PongGame({
     if (!gs || (gs.ctrlTop !== e.pointerId && gs.ctrlBot !== e.pointerId)) return;
     const { x } = toLocal(e);
     const cx = clamp(x, gs.padW / 2, gs.W - gs.padW / 2);
-    if (gs.ctrlTop === e.pointerId) gs.topTargetX = cx;
-    if (gs.ctrlBot === e.pointerId) gs.botTargetX = cx;
+    if (gs.ctrlTop === e.pointerId) { gs.topTargetX = cx; gs.topMoved = true; }
+    if (gs.ctrlBot === e.pointerId) { gs.botTargetX = cx; gs.botMoved = true; }
   };
 
   const onUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -401,6 +442,9 @@ export function PongGame({
     gs.topScore = 0; gs.botScore = 0;
     gs.winner = null; gs.lastHudKey = '';
     gs.speed = gs.baseSpeed;
+    gs.topMoved = false; gs.botMoved = false;
+    gs.topX = gs.W * 0.35; gs.topTargetX = gs.W * 0.35;
+    gs.botX = gs.W * 0.65; gs.botTargetX = gs.W * 0.65;
     doCountdown(gs, 'bot', 1400, performance.now());
   };
 
@@ -408,6 +452,7 @@ export function PongGame({
 
   const loserSide: 'top' | 'bot' = hud.winner === 'top' ? 'bot' : 'top';
   const loserName = hud.winner === 'top' ? botName : topName;
+  const showScore = hud.phase === 'play' || (hud.phase === 'countdown' && (hud.topScore > 0 || hud.botScore > 0));
 
   // ── render ────────────────────────────────────────────────────────────────
 
@@ -428,23 +473,78 @@ export function PongGame({
         <GoldCoin size={coinSize} mood="idle" drop />
       </div>
 
-      {/* Countdown number */}
-      {hud.phase === 'countdown' && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-          <span
-            key={hud.count}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 80,
-              fontWeight: 700,
-              color: 'var(--ink-900)',
-              lineHeight: 1,
-              animation: 'pong-pop .22s cubic-bezier(.34,1.3,.64,1) both',
-            }}
-          >
-            {hud.count}
-          </span>
-        </div>
+      {/* Top player countdown number — positioned on their paddle, rotated so they can read it */}
+      <div
+        ref={topCountRef}
+        className="pong-hid"
+        style={{
+          position: 'absolute', left: 0, top: 53,
+          fontFamily: 'var(--font-mono)', fontSize: 44, fontWeight: 700,
+          color: 'var(--ink-900)', lineHeight: 1, pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      />
+
+      {/* Bot player countdown number */}
+      <div
+        ref={botCountRef}
+        className="pong-hid"
+        style={{
+          position: 'absolute', left: 0, bottom: 53,
+          fontFamily: 'var(--font-mono)', fontSize: 44, fontWeight: 700,
+          color: 'var(--ink-900)', lineHeight: 1, pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      />
+
+      {/* Top player drag-hint arrows (hidden once they move) */}
+      <div
+        ref={topArrowsRef}
+        className="pong-hid"
+        style={{
+          position: 'absolute', left: 0, top: 108,
+          alignItems: 'center', gap: 16, pointerEvents: 'none',
+        }}
+      >
+        <span style={{ fontSize: 13, opacity: 0.45, color: 'var(--ink-900)', fontWeight: 600 }}>←</span>
+        <span style={{ fontSize: 11, opacity: 0.35, color: 'var(--ink-900)', letterSpacing: '0.05em', fontFamily: 'var(--font-display)', fontWeight: 600 }}>drag</span>
+        <span style={{ fontSize: 13, opacity: 0.45, color: 'var(--ink-900)', fontWeight: 600 }}>→</span>
+      </div>
+
+      {/* Bot player drag-hint arrows */}
+      <div
+        ref={botArrowsRef}
+        className="pong-hid"
+        style={{
+          position: 'absolute', left: 0, bottom: 108,
+          alignItems: 'center', gap: 16, pointerEvents: 'none',
+        }}
+      >
+        <span style={{ fontSize: 13, opacity: 0.45, color: 'var(--ink-900)', fontWeight: 600 }}>←</span>
+        <span style={{ fontSize: 11, opacity: 0.35, color: 'var(--ink-900)', letterSpacing: '0.05em', fontFamily: 'var(--font-display)', fontWeight: 600 }}>drag</span>
+        <span style={{ fontSize: 13, opacity: 0.45, color: 'var(--ink-900)', fontWeight: 600 }}>→</span>
+      </div>
+
+      {/* Subtle score — shown for both players in their own half of the screen */}
+      {showScore && (
+        <>
+          <div style={{
+            position: 'absolute', top: 10, left: '50%',
+            transform: 'translateX(-50%) rotate(180deg)',
+            fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 700,
+            color: 'rgba(28,27,41,0.28)', pointerEvents: 'none', lineHeight: 1,
+          }}>
+            {hud.topScore} – {hud.botScore}
+          </div>
+          <div style={{
+            position: 'absolute', bottom: 10, left: '50%',
+            transform: 'translateX(-50%)',
+            fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 700,
+            color: 'rgba(28,27,41,0.28)', pointerEvents: 'none', lineHeight: 1,
+          }}>
+            {hud.botScore} – {hud.topScore}
+          </div>
+        </>
       )}
 
       {/* Game-over card */}
@@ -470,9 +570,6 @@ export function PongGame({
             </div>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-900)', marginTop: 4 }}>
               {loserName} pays 😬
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
-              Ah, bad luck.
             </div>
             <button
               onClick={() => onResult(loserSide)}

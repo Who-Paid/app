@@ -142,6 +142,7 @@ button { font: inherit; }
 @keyframes ck-spinfly { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(540deg) scale(1.06); } 100% { transform: rotate(1080deg) scale(1); } }
 @keyframes wp-share-pulse { 0% { transform: scale(1); opacity: .8; } 70%, 100% { transform: scale(1.5); opacity: 0; } }
 @keyframes pong-pop { 0% { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.pong-hid { display: none; }
 @keyframes wp-coin-wiggle { 0% { transform: rotate(0deg); } 20% { transform: rotate(-14deg); } 50% { transform: rotate(11deg); } 75% { transform: rotate(-6deg); } 100% { transform: rotate(0deg); } }
 @keyframes wp-hint-fade { 0% { opacity: 0; } 18% { opacity: 0.55; } 70% { opacity: 0.55; } 100% { opacity: 0; } }
 @keyframes ck-heart { 0% { transform: translate(-50%,-50%) scale(.2) rotate(0); opacity: 0; } 16% { opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) scale(var(--sc)) rotate(var(--rot)); opacity: 0; } }

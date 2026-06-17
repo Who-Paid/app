@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Person, Table } from '../lib/types';
+import { compressImage } from '../lib/compressImage';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Icon } from '../components/ui/Icon';
@@ -44,7 +45,10 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
     const f = e.target.files?.[0];
     if (!f) return;
     const r = new FileReader();
-    r.onload = () => setPhoto(r.result as string);
+    r.onload = async () => {
+      const compressed = await compressImage(r.result as string, 512);
+      setPhoto(compressed);
+    };
     r.readAsDataURL(f);
   };
 

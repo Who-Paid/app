@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Profile } from '../lib/types';
+import { compressImage } from '../lib/compressImage';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
@@ -26,7 +27,10 @@ export function ProfileScreen({ profile, onBack, onSave }: Props) {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setPhoto(ev.target?.result as string);
+    reader.onload = async (ev) => {
+      const compressed = await compressImage(ev.target?.result as string, 256);
+      setPhoto(compressed);
+    };
     reader.readAsDataURL(f);
     e.target.value = '';
   };
