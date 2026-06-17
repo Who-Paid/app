@@ -8,6 +8,17 @@ import { Icon } from '../components/ui/Icon';
 import { ShareUpIcon } from '../components/ui/ShareUpIcon';
 import { HeartBurst } from '../components/HeartBurst';
 import { GoldCoin, type Mood } from '../components/GoldCoin';
+import { PongGame } from '../components/PongGame';
+
+function PongIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="3" width="9" height="3" rx="1.5" fill="currentColor" />
+      <rect x="13" y="18" width="9" height="3" rx="1.5" fill="currentColor" />
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
 
 const COIN = 86;
 const MARGIN = 7;
@@ -56,6 +67,18 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const [celebrate, setCelebrate] = useState<{ id: number; payerIdx: number } | null>(null);
   const [hoverBandIdx, setHoverBandIdx] = useState<number | null>(null);
   const [dicePicking, setDicePicking] = useState(false);
+  const [mode, setMode] = useState<'idle' | 'pong'>('idle');
+
+  const startPong = () => { setDicePicking(false); setMode('pong'); };
+
+  const onPongResult = (loserSide: 'top' | 'bot') => {
+    const loserIdx = loserSide === 'top' ? 0 : n - 1;
+    setMode('idle');
+    const cid = Date.now();
+    setCelebrate({ id: cid, payerIdx: loserIdx });
+    setTimeout(() => setCelebrate(c => (c && c.id === cid ? null : c)), 1500);
+    onPaid(table.id, order[loserIdx].id);
+  };
   const [mood, setMood] = useState<Mood>(() => {
     if (!hasPayer) return 'idle';
     return order[paidIdx].isMe ? 'pay' : 'safe';
@@ -460,11 +483,11 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         );
       })}
 
-      {/* the coin / puck */}
+      {/* the coin / puck — hidden while Pong game is playing */}
       <div ref={coinRef}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
         onClick={(e) => e.stopPropagation()}
-        style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 30, cursor: 'grab', touchAction: 'none', width: COIN, height: COIN }}>
+        style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 30, cursor: 'grab', touchAction: 'none', width: COIN, height: COIN, display: mode === 'pong' ? 'none' : undefined }}>
         <div ref={shadowRef} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: COIN * 0.86, height: COIN * 0.86, borderRadius: '50%', background: 'rgba(28,27,41,.22)', filter: 'blur(11px)', zIndex: -1 }} />
         {/* scaleRef handles the grab-scale; squashRef handles bob + squash during flight */}
         <div ref={scaleRef} style={{ transformOrigin: '50% 50%' }}>
@@ -475,8 +498,8 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         <div ref={hintRef} style={{ position: 'absolute', left: '50%', top: -34, transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'var(--ink-900)', color: 'var(--paper)', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 11.5, padding: '5px 10px', borderRadius: 99, transition: 'opacity .3s', pointerEvents: 'none' }}>👆 flick to flip</div>
       </div>
 
-      {/* top bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 35, padding: 'var(--wp-pad-top) 14px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(255,247,238,.92), rgba(255,247,238,0))' }}>
+      {/* top bar — hidden while Pong is running */}
+      {mode !== 'pong' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 35, padding: 'var(--wp-pad-top) 14px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(255,247,238,.92), rgba(255,247,238,0))' }}>
         <IconButton label="Back" onClick={onBack}><Icon name="arrow-left" size={22} /></IconButton>
         <div style={{ display: 'flex', gap: 6 }}>
           {n < 4 && <IconButton label="Add person" onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
@@ -497,7 +520,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             </IconButton>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* sync nudge tooltip */}
       {showNudge && (
@@ -538,9 +561,9 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         </div>
       )}
 
-      {/* dice */}
-      {!hasPayer ? (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(26px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
+      {/* dice / pong choice — hidden while Pong is running */}
+      {mode === 'idle' && (!hasPayer ? (
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(26px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '0 16px' }}>
           <button onClick={() => !flyingRef.current && glideTo(randomTarget())}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 13, cursor: 'pointer',
@@ -551,6 +574,18 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             <Icon name="dices" size={30} />
             <span style={{ whiteSpace: 'nowrap' }}>Let the dice decide<br />who pays today</span>
           </button>
+          {n === 2 && <>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>or play for it</span>
+            <button onClick={startPong} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+              padding: '14px 22px 14px 18px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--card)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, lineHeight: 1.12,
+            }}>
+              <PongIcon size={28} />
+              <span style={{ whiteSpace: 'nowrap' }}>Play Pong — loser pays 🏓</span>
+            </button>
+          </>}
         </div>
       ) : (
         <div style={{ position: 'absolute', right: 16, bottom: 'calc(16px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -565,6 +600,13 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
               picking randomly…
             </span>
           )}
+          {n === 2 && (
+            <button onClick={startPong} aria-label="Play Pong"
+              style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--card)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <PongIcon size={26} />
+            </button>
+          )}
           <button
             onClick={() => { if (!flyingRef.current) { setDicePicking(true); glideTo(randomTarget()); } }}
             aria-label="Let the dice decide"
@@ -573,6 +615,19 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             <Icon name="dices" size={26} />
           </button>
         </div>
+      ))}
+
+      {/* Pong mini-game — renders over the table bands when mode === 'pong' */}
+      {mode === 'pong' && n === 2 && (
+        <PongGame
+          topName={order[0].name || 'Them'}
+          botName="You"
+          topColor="#4DA2FF"
+          botColor="#1FCD7C"
+          target={3}
+          onExit={() => setMode('idle')}
+          onResult={onPongResult}
+        />
       )}
     </div>
   );
