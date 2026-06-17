@@ -548,7 +548,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                       {named ? p.name : (isMe ? 'You' : 'Add name')}
                     </span>
                     {isMe && named && (
-                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: Math.max(10, fontSize * 0.5), letterSpacing: '0.05em', color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--mint-700)', background: p.photo ? 'rgba(255,255,255,.2)' : 'var(--mint-50)', borderRadius: 6, padding: '2px 6px', lineHeight: 1.4 }}>me</span>
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: Math.max(10, fontSize * 0.5), letterSpacing: '0.05em', color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--mint-700)', background: p.photo ? 'rgba(255,255,255,.2)' : 'var(--mint-100)', borderRadius: 6, padding: '2px 6px', lineHeight: 1.4 }}>me</span>
                     )}
                   </div>
                 )}
