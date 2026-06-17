@@ -104,7 +104,7 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
                 {photo ? 'Photo added' : 'Snap a photo'}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>
-                Fill their side of the table.
+                {person.isMe ? 'Beautify my side of the table.' : 'Beautify their side of the table.'}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>

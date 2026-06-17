@@ -610,25 +610,79 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         </div>
       )}
 
-      {/* FABs — dice (when no payer yet) + pong (2-person only) in bottom-right corner */}
-      {mode === 'idle' && (!hasPayer || n === 2) && (
+      {/* no-payer: large flanking pills at coin level (2-person) or single pill (3/4-person) */}
+      {mode === 'idle' && !hasPayer && n === 2 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-50%)',
+          display: 'flex', alignItems: 'center',
+          padding: '0 14px', zIndex: 28, pointerEvents: 'none',
+        }}>
+          <button
+            onClick={() => !flyingRef.current && glideTo(randomTarget())}
+            style={{
+              pointerEvents: 'auto', flex: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '10px 16px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--sun-300)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
+            }}
+          >
+            <Icon name="dices" size={20} />
+            Roll the dice
+          </button>
+          <div style={{ flex: 1 }} />
+          <button
+            onClick={startPong}
+            style={{
+              pointerEvents: 'auto', flex: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '10px 16px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--card)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
+            }}
+          >
+            <PongIcon size={18} />
+            Pong for it
+          </button>
+        </div>
+      )}
+      {mode === 'idle' && !hasPayer && n !== 2 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-50%)',
+          display: 'flex', justifyContent: 'flex-start', alignItems: 'center',
+          padding: '0 14px', zIndex: 28,
+        }}>
+          <button
+            onClick={() => !flyingRef.current && glideTo(randomTarget())}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '10px 16px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--sun-300)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
+            }}
+          >
+            <Icon name="dices" size={20} />
+            Loser pays
+          </button>
+        </div>
+      )}
+      {/* payer set: small round FABs in bottom-right — dice to re-roll + pong */}
+      {mode === 'idle' && hasPayer && n === 2 && (
         <div style={{ position: 'absolute', right: 16, bottom: 'calc(16px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', alignItems: 'center', gap: 10 }}>
-          {!hasPayer && (
-            <button
-              onClick={() => !flyingRef.current && glideTo(randomTarget())}
-              aria-label="Roll the dice"
-              style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--sun-300)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Icon name="dices" size={26} />
-            </button>
-          )}
-          {n === 2 && (
-            <button onClick={startPong} aria-label="Play Pong"
-              style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--card)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <PongIcon size={26} />
-            </button>
-          )}
+          <button
+            onClick={() => !flyingRef.current && glideTo(randomTarget())}
+            aria-label="Roll the dice"
+            style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--sun-300)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Icon name="dices" size={26} />
+          </button>
+          <button onClick={startPong} aria-label="Play Pong"
+            style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--card)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <PongIcon size={26} />
+          </button>
         </div>
       )}
 

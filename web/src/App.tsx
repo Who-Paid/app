@@ -95,13 +95,12 @@ export default function App() {
 
   const onInvite = async (table: Table) => {
     const url = `${window.location.origin}${window.location.pathname}?share#/t/${table.id}`;
-    const text = `Join "${table.name}" on Who Paid?`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Who Paid?', text, url });
+        await navigator.share({ title: 'Who Paid?', url });
         return;
       }
-      await navigator.clipboard.writeText(`${text}\n${url}`);
+      await navigator.clipboard.writeText(url);
       flash(syncEnabled ? "Invite link copied 🔗 — they'll see this table live" : 'Invite link copied 🔗');
     } catch {
       flash('Invite link: ' + url);

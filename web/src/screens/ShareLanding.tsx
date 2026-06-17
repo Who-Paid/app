@@ -1,3 +1,5 @@
+import { GoldCoin } from '../components/GoldCoin';
+
 const STORE_URL = 'https://apps.apple.com/app/who-paid';
 
 export function ShareLanding({ tableName, onDismiss }: { tableName: string; onDismiss: () => void }) {
@@ -18,7 +20,7 @@ export function ShareLanding({ tableName, onDismiss }: { tableName: string; onDi
         <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--ink-300)', margin: '0 auto 24px' }} />
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10, marginBottom: 28 }}>
-          <div style={{ fontSize: 48, lineHeight: 1 }}>🪙</div>
+          <GoldCoin size={64} mood="idle" />
           <h2 style={{ fontSize: 21, margin: 0 }}>You're invited to "{tableName}"</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 15, fontWeight: 500, maxWidth: 280, margin: 0 }}>
             Save the table and see the coin move live — get Who Paid? to sync.

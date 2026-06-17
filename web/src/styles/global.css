@@ -145,6 +145,8 @@ button { font: inherit; }
 .pong-hid { display: none; }
 @keyframes wp-coin-wiggle { 0% { transform: rotate(0deg); } 20% { transform: rotate(-14deg); } 50% { transform: rotate(11deg); } 75% { transform: rotate(-6deg); } 100% { transform: rotate(0deg); } }
 @keyframes wp-hint-fade { 0% { opacity: 0; } 18% { opacity: 0.55; } 70% { opacity: 0.55; } 100% { opacity: 0; } }
+/* --dx/--dy/--sc/--rot are set inline per heart element by HeartBurst */
+:root { --dx: 0px; --dy: 0px; --sc: 1; --rot: 0deg; }
 @keyframes ck-heart { 0% { transform: translate(-50%,-50%) scale(.2) rotate(0); opacity: 0; } 16% { opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(-50%,-50%) translate(var(--dx), var(--dy)) scale(var(--sc)) rotate(var(--rot)); opacity: 0; } }
 
 /* ---- GoldCoin face animations ---- */

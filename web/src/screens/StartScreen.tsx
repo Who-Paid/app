@@ -76,9 +76,9 @@ export function StartScreen({
 
       {/* hero */}
       <div style={{ marginTop: 4 }}>
-        <h1 style={{ fontSize: 38, lineHeight: 1.02 }}>Whose round<br />was it again?</h1>
+        <h1 style={{ fontSize: 38, lineHeight: 1.02 }}>Who paid last?<br />Who pays next?</h1>
         <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: 15, marginTop: 10 }}>
-          One coin per table. Whoever paid keeps it — flick it over when it&apos;s your shout.
+          Find out or play for it. Loser always pays.
         </p>
       </div>
 
