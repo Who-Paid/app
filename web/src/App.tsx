@@ -4,7 +4,7 @@ import { useTables, getClaimedSeat } from './lib/useTables';
 import { isAtLimit, isPro, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
-import { ProfileScreen } from './screens/ProfileScreen';
+import { SignUpScreen } from './screens/SignUpScreen';
 import { EditSheet } from './screens/EditSheet';
 import { PaywallSheet } from './screens/PaywallSheet';
 import { ReviewPrompt } from './screens/ReviewPrompt';
@@ -256,7 +256,7 @@ export default function App() {
         )}
 
         {view === 'profile' && (
-          <ProfileScreen
+          <SignUpScreen
             profile={profile}
             onBack={() => setView('start')}
             onSave={onSaveProfile}

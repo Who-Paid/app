@@ -68,6 +68,8 @@ button { font: inherit; }
 .wp-btn--secondary { --_bg: var(--card); --_fg: var(--text-strong); --_bd: var(--ink-900); --_pop: var(--pop-ink); }
 .wp-btn--secondary:active { box-shadow: 0 1px 0 var(--ink-900); }
 .wp-btn--ghost { --_bg: transparent; --_fg: var(--text-strong); --_pop: none; box-shadow: none; }
+.wp-btn--apple { --_bg: var(--ink-900); --_fg: #fff; --_pop: 0 4px 0 rgba(28,27,41,.5); border-color: var(--ink-900); }
+.wp-btn--apple:active { box-shadow: 0 1px 0 rgba(28,27,41,.5); }
 .wp-btn--ghost:hover { background: rgba(28,27,41,.06); filter: none; }
 .wp-btn--ghost:active { transform: translateY(1px); box-shadow: none; }
 .wp-btn--block { width: 100%; }
@@ -156,5 +158,7 @@ button { font: inherit; }
 @keyframes ck-tremble{ 0%,100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-1.5px,0) rotate(-1.5deg); } 75% { transform: translate(1.5px,0) rotate(1.5deg); } }
 @keyframes ck-sweat  { 0% { transform: translateY(0) scale(.6); opacity:0; } 18% { opacity:1; } 70% { opacity:1; } 100% { transform: translateY(22px) scale(1); opacity:0; } }
 @keyframes wp-claim-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes wp-pop-in { 0% { transform: scale(.94) translateY(8px); opacity: 0; } 70% { transform: scale(1.02) translateY(0); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .wp-pop-in, [style*="wp-pop-in"] { animation: none !important; } }
 .wp-claim-opt { transition: transform .12s ease, box-shadow .12s ease; }
 .wp-claim-opt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink-900); }

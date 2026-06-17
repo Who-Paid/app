@@ -105,6 +105,24 @@
     "save": "Profil speichern",
     "uploadLabel": "Foto hochladen"
   },
+  "signUp": {
+    "title": "Dein Profil",
+    "pitchHeadline": "Verliere keinen Tisch 🪙",
+    "pitchSub": "In 10 Sekunden anmelden — deine Tische folgen dir auf jedes Handy.",
+    "namePlaceholder": "Wie sollen wir dich nennen?",
+    "addPhoto": "Foto hinzufügen",
+    "continueApple": "Weiter mit Apple",
+    "orEmail": "oder per E-Mail",
+    "emailPlaceholder": "deine@email.com",
+    "magicLinkCta": "Magic Link per E-Mail senden",
+    "magicLinkHelper": "Kein Passwort — einfach den Link antippen, den wir schicken. ✨",
+    "magicLinkHelperNoName": "Füge deinen Vornamen hinzu, um fortzufahren.",
+    "sentTitle": "Schau in deinen Posteingang",
+    "sentBody": "Wir haben einen Magic Link an {{email}} geschickt. Tippe ihn an und du bist drin.",
+    "sentCta": "Ich habe den Link angetippt",
+    "sentChange": "Andere E-Mail verwenden",
+    "footer": "Who Paid? · Version 0.1"
+  },
   "review": {
     "openingStore": "App Store wird geöffnet…",
     "thanksFeedback": "Danke für dein Feedback",
