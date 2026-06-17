@@ -3,7 +3,6 @@ import { Avatar } from '../components/ui/Avatar';
 import type { Table } from '../lib/types';
 
 export function ClaimSeat({ table, onClaim }: { table: Table; onClaim: (personId: string) => void }) {
-  const candidates = table.people.filter((p) => !p.isMe);
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 90, background: 'var(--surface-app)',
@@ -20,20 +19,35 @@ export function ClaimSeat({ table, onClaim }: { table: Table; onClaim: (personId
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 28 }}>
-        {candidates.map((p) => (
-          <button key={p.id} onClick={() => onClaim(p.id)} className="wp-claim-opt"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14, background: 'var(--card)',
-              border: '2px solid var(--ink-900)', borderRadius: 20, padding: '12px 16px',
-              cursor: 'pointer', boxShadow: 'var(--pop-ink)', textAlign: 'left',
+        {table.people.map((p) => {
+          const isCreator = !!p.isMe;
+          return isCreator ? (
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', gap: 14, background: 'var(--paper-2)',
+              border: '2px solid var(--ink-100)', borderRadius: 20, padding: '12px 16px',
+              opacity: 0.5, textAlign: 'left',
             }}>
-            <Avatar name={p.name || 'Guest'} src={p.profilePhoto ?? p.photo ?? null} size="sm" />
-            <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--ink-900)' }}>
-              {p.name || 'Open seat'}
-            </span>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>this is me ›</span>
-          </button>
-        ))}
+              <Avatar name={p.name || 'Guest'} src={p.profilePhoto ?? p.photo ?? null} size="sm" />
+              <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--ink-300)' }}>
+                {p.name || 'Someone'}
+              </span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 12, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>already joined</span>
+            </div>
+          ) : (
+            <button key={p.id} onClick={() => onClaim(p.id)} className="wp-claim-opt"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 14, background: 'var(--card)',
+                border: '2px solid var(--ink-900)', borderRadius: 20, padding: '12px 16px',
+                cursor: 'pointer', boxShadow: 'var(--pop-ink)', textAlign: 'left',
+              }}>
+              <Avatar name={p.name || 'Guest'} src={p.profilePhoto ?? p.photo ?? null} size="sm" />
+              <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--ink-900)' }}>
+                {p.name || 'Open seat'}
+              </span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>this is me ›</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

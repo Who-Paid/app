@@ -20,7 +20,13 @@ function savePersp(tableId: string, personId: string) {
 }
 
 function applyPersp(table: Table): Table {
-  const meId = perspMap[table.id];
+  let meId = perspMap[table.id];
+  if (!meId) {
+    // Auto-migrate: recover the creator's person from the canonical field or the
+    // legacy isMe:true flag.  This fires once per device per table and is idempotent.
+    const origId = table.creatorPersonId ?? table.people.find(p => p.isMe)?.id;
+    if (origId) { savePersp(table.id, origId); meId = origId; }
+  }
   if (!meId) return table;
   const meIdx = table.people.findIndex(p => p.id === meId);
   if (meIdx < 0) return table;
@@ -67,11 +73,23 @@ export function useTables() {
   const [loading, setLoading] = useState(true);
   const tablesRef = useRef<Table[]>([]);
   tablesRef.current = tables;
+  // Session-level cache of each table's canonical creator person id.
+  // Populated from raw backend data (before applyPersp flips isMe) so that
+  // commit() can always restore the correct isMe before writing to Supabase.
+  const canonicalCreatorRef = useRef<Record<string, string>>({});
+
+  const cacheCanonicalCreator = (t: Table) => {
+    if (canonicalCreatorRef.current[t.id]) return;
+    const id = t.creatorPersonId ?? t.people.find(p => p.isMe)?.id;
+    if (id) canonicalCreatorRef.current[t.id] = id;
+  };
 
   const refresh = useCallback(async () => {
     const all = await backend.loadAll();
+    all.forEach(cacheCanonicalCreator);
     setTables(all.map(applyPersp));
     setLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -87,7 +105,14 @@ export function useTables() {
       next.unshift(stamped);
       return next;
     });
-    void backend.upsert(stamped);
+    // isMe is per-device — restore the canonical (creator's) perspective before
+    // writing to the shared backend so joiners never corrupt the creator's view.
+    const creatorId = stamped.creatorPersonId ?? canonicalCreatorRef.current[stamped.id];
+    const forBackend: Table = creatorId ? {
+      ...stamped,
+      people: stamped.people.map(p => ({ ...p, isMe: p.id === creatorId ? true : undefined })),
+    } : stamped;
+    void backend.upsert(forBackend);
     return stamped;
   }, []);
 
@@ -99,7 +124,12 @@ export function useTables() {
 
   const createTable = useCallback((profile?: Profile | null) => {
     const t = newTable(profile);
-    return commit(t);
+    const myPerson = t.people.find(p => p.isMe);
+    if (myPerson) {
+      savePersp(t.id, myPerson.id);
+      canonicalCreatorRef.current[t.id] = myPerson.id;
+    }
+    return commit({ ...t, creatorPersonId: myPerson?.id });
   }, [commit]);
 
   const setPaid = useCallback((tableId: string, personId: string) => {
@@ -127,6 +157,8 @@ export function useTables() {
   const joinByInvite = useCallback(async (tableId: string): Promise<Table | null> => {
     const t = await backend.join(tableId);
     if (!t) return null;
+    // Cache the canonical creator from the raw backend record (before any perspective flip).
+    cacheCanonicalCreator(t);
     const senderMe = t.people.find(p => p.isMe);
     const others = t.people.filter(p => !p.isMe);
 

@@ -28,4 +28,6 @@ export interface Table {
   people: Person[];
   /** ms timestamp of last edit — used to resolve realtime conflicts */
   updatedAt?: number;
+  /** Person id of the table creator — immutable, used to restore canonical isMe before Supabase writes */
+  creatorPersonId?: string;
 }
