@@ -215,7 +215,7 @@ export default function App() {
           return ct ? (
             <ClaimSeat
               table={ct}
-              onClaim={(pid) => {
+              onClaim={(pid: string) => {
                 claimSeat(ct.id, pid);
                 const nm = ct.people.find((p) => p.id === pid)?.name || 'you';
                 setClaimTableId(null);
