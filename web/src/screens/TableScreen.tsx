@@ -10,6 +10,16 @@ import { HeartBurst } from '../components/HeartBurst';
 import { GoldCoin, type Mood } from '../components/GoldCoin';
 import { PongGame } from '../components/PongGame';
 
+// Deterministic pseudo-random float in [0,1) from a string seed (FNV-1a).
+function seededRand(seed: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = (h ^ seed.charCodeAt(i)) >>> 0;
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return (h >>> 0) / 4294967296;
+}
+
 function PongIcon({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -102,13 +112,44 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
 
   // Where the coin rests inside a band (n ≤ 3): pulled toward the screen's centre so
   // it never covers that person's avatar + name, and clamped on-screen.
-  const landY = (i: number, H: number) => {
+  // A seeded Y jitter keeps different tables feeling distinct.
+  const landY = (i: number, H: number, rand?: number) => {
     const bandH = H / n;
     const c = (i + 0.5) * bandH;
     const dir = c < H / 2 ? 1 : -1;
     const y = c + dir * bandH * 0.36;
     const top = COIN / 2 + MARGIN + (i === 0 ? 40 : 0);
     const bot = H - (COIN / 2 + MARGIN);
+    const base = Math.max(top, Math.min(bot, y));
+    const ry = rand ?? seededRand(table.id + (order[i]?.id ?? String(i)) + 'y');
+    return Math.max(top, Math.min(bot, base + (ry - 0.5) * 80));
+  };
+
+  // X: coin rests left or right of the central content block (±fz px forbidden zone).
+  // Pass an explicit rand to get a fresh-random position; omit for seeded (stable on load).
+  const FZ = 70; // half-width of forbidden center strip
+  const landX = (i: number, W: number, rand?: number): number => {
+    const r = rand ?? seededRand(table.id + (order[i]?.id ?? String(i)));
+    const m = COIN / 2 + MARGIN;
+    const hw = Math.max(0, W / 2 - FZ - m);
+    if (hw <= 0) return W / 2;
+    return r < 0.5 ? m + r * 2 * hw : W / 2 + FZ + (r - 0.5) * 2 * hw;
+  };
+
+  // Snap a drop X to nearest allowed position (outside center forbidden strip).
+  const clampDropX = (x: number, W: number): number => {
+    const m = COIN / 2 + MARGIN;
+    const sx = Math.max(m, Math.min(W - m, x));
+    if (sx > W / 2 - FZ && sx < W / 2 + FZ) {
+      return sx <= W / 2 ? W / 2 - FZ : W / 2 + FZ;
+    }
+    return sx;
+  };
+
+  // Clamp Y to its band's safe range.
+  const clampBandY = (y: number, i: number, H: number): number => {
+    const top = (i / n) * H + COIN / 2 + MARGIN + (i === 0 ? 44 : 0);
+    const bot = ((i + 1) / n) * H - COIN / 2 - MARGIN;
     return Math.max(top, Math.min(bot, y));
   };
 
@@ -130,15 +171,19 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     return Math.min(n - 1, Math.max(0, Math.floor((y / H) * n)));
   };
 
-  // Smooth drop after a slow conscious drag (no bouncing).
-  const landAt = (targetIdx: number) => {
+  // Smooth drop after a slow conscious drag — land at where user released (clamped to allowed zone).
+  const landAt = (targetIdx: number, dropX?: number, dropY?: number) => {
     flyingRef.current = true;
     const w = coinRef.current!;
     const el = tableRef.current!;
     const H = el.clientHeight;
     const W = el.clientWidth;
-    const targetY = n === 4 ? landY4(targetIdx, H) : landY(targetIdx, H);
-    const targetX = n === 4 ? W * (targetIdx % 2 === 0 ? 0.25 : 0.75) : W / 2;
+    const targetY = n === 4
+      ? landY4(targetIdx, H)
+      : (dropY !== undefined ? clampBandY(dropY, targetIdx, H) : landY(targetIdx, H));
+    const targetX = n === 4
+      ? W * (targetIdx % 2 === 0 ? 0.25 : 0.75)
+      : (dropX !== undefined ? clampDropX(dropX, W) : landX(targetIdx, W));
     const nearestUpright = Math.round(spinRef.current / 360) * 360;
     spinRef.current = nearestUpright;
     w.style.transition = 'top 0.38s cubic-bezier(.34,1.3,.64,1), left 0.38s cubic-bezier(.34,1.3,.64,1), transform 0.38s cubic-bezier(.34,1.3,.64,1)';
@@ -164,6 +209,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     const el = tableRef.current, w = coinRef.current;
     if (!el || !w) return;
     const H = el.clientHeight;
+    const W = el.clientWidth;
     if (!H) return;
     w.style.transition = 'none';
     if (n === 4) {
@@ -171,7 +217,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
       w.style.left = hasPayer ? `${paidIdx % 2 === 0 ? 25 : 75}%` : '50%';
     } else {
       w.style.top  = `${hasPayer ? landY(paidIdx, H) : H / 2}px`;
-      w.style.left = '50%';
+      w.style.left = hasPayer ? `${landX(paidIdx, W)}px` : '50%';
     }
     w.style.transform = `translate(-50%,-50%) rotate(${spinRef.current}deg)`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,9 +255,9 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     const startX = leftRaw.endsWith('%') ? W * parseFloat(leftRaw) / 100 : (parseFloat(leftRaw) || W / 2);
     const startY = parseFloat(w.style.top) || (hasPayer ? landY(paidIdx, H) : H / 2);
 
-    // Target resting position.
-    const targetY = n === 4 ? landY4(targetIdx, H) : landY(targetIdx, H);
-    const targetX = n === 4 ? W * (targetIdx % 2 === 0 ? 0.25 : 0.75) : W / 2;
+    // Target resting position — fresh random so each flick/dice roll lands somewhere different.
+    const targetY = n === 4 ? landY4(targetIdx, H) : landY(targetIdx, H, Math.random());
+    const targetX = n === 4 ? W * (targetIdx % 2 === 0 ? 0.25 : 0.75) : landX(targetIdx, W, Math.random());
 
     // Direction from flick velocity; random unit vector for tap.
     let vx = velRef.current.vx, vy = velRef.current.vy;
@@ -407,12 +453,12 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
       // Fast flick → 2D bouncy animation using current velocity direction.
       glideTo(otherTarget());
     } else {
-      // Slow conscious drag → smooth land on whichever band the coin is over.
+      // Slow conscious drag → land where user released (snapped to nearest allowed position).
       const el = tableRef.current!;
       const curY = parseFloat(coinRef.current!.style.top);
       const curX = parseFloat(coinRef.current!.style.left);
       const target = getBandIdx(curX, curY, el.clientWidth, el.clientHeight);
-      landAt(target);
+      landAt(target, curX, curY);
     }
   };
 
