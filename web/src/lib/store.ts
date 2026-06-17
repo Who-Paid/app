@@ -20,6 +20,18 @@ export function deviceId(): string {
   return id;
 }
 
+let _authUserId: string | null = null;
+
+/** Set the authenticated user's id. Pass null on sign-out. */
+export function setAuthUserId(id: string | null): void {
+  _authUserId = id;
+}
+
+/** The member identifier for this session: real user id when signed in, device id otherwise. */
+export function getMemberId(): string {
+  return _authUserId ?? deviceId();
+}
+
 export interface Backend {
   /** Load every table visible to this device. */
   loadAll(): Promise<Table[]>;
@@ -31,6 +43,8 @@ export interface Backend {
   delete(tableId: string): Promise<void>;
   /** Subscribe to remote changes; returns an unsubscribe fn. */
   subscribe(onChange: () => void): () => void;
+  /** Add userId to the members list of every table this device owns (called once on sign-in). */
+  migrate(userId: string): Promise<void>;
 }
 
 const sortTables = (ts: Table[]) =>
@@ -67,6 +81,9 @@ const localBackend: Backend = {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   },
+  async migrate() {
+    // No-op: local backend has no remote members list to update.
+  },
 };
 
 /* -------------------------- supabase ------------------------------ */
@@ -75,7 +92,7 @@ const supabaseBackend: Backend = {
     const { data, error } = await supabase!
       .from('tables')
       .select('data, members, updated_at')
-      .contains('members', [deviceId()]);
+      .contains('members', [getMemberId()]);
     if (error) {
       console.warn('[store] loadAll failed, is the schema applied?', error.message);
       return [];
@@ -83,7 +100,7 @@ const supabaseBackend: Backend = {
     return sortTables((data ?? []).map((r) => r.data as Table));
   },
   async upsert(table) {
-    const me = deviceId();
+    const me = getMemberId();
     // Read current members so we never drop a collaborator on write.
     const { data: existing } = await supabase!
       .from('tables')
@@ -101,7 +118,7 @@ const supabaseBackend: Backend = {
     if (error) console.warn('[store] upsert failed', error.message);
   },
   async join(tableId) {
-    const me = deviceId();
+    const me = getMemberId();
     const { data } = await supabase!
       .from('tables')
       .select('data, members')
@@ -116,7 +133,7 @@ const supabaseBackend: Backend = {
     return data.data as Table;
   },
   async delete(tableId) {
-    const me = deviceId();
+    const me = getMemberId();
     const { data } = await supabase!
       .from('tables')
       .select('members')
@@ -136,8 +153,25 @@ const supabaseBackend: Backend = {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, () => onChange())
       .subscribe();
     return () => {
-      supabase!.removeChannel(channel);
+      void supabase!.removeChannel(channel);
     };
+  },
+  async migrate(userId: string) {
+    const did = deviceId();
+    if (did === userId) return;
+    // Find every table this device owns and add the real user id to members.
+    const { data } = await supabase!
+      .from('tables')
+      .select('id, members')
+      .contains('members', [did]);
+    if (!data) return;
+    for (const row of data) {
+      const members: string[] = row.members ?? [];
+      if (!members.includes(userId)) {
+        members.push(userId);
+        await supabase!.from('tables').update({ members }).eq('id', row.id);
+      }
+    }
   },
 };
 

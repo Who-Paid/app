@@ -105,6 +105,24 @@
     "save": "Save profile",
     "uploadLabel": "Upload photo"
   },
+  "signUp": {
+    "title": "Your profile",
+    "pitchHeadline": "Don't lose a table 🪙",
+    "pitchSub": "Sign up in 10 seconds — your tables follow you to any phone.",
+    "namePlaceholder": "What should we call you?",
+    "addPhoto": "Add a photo",
+    "continueApple": "Continue with Apple",
+    "orEmail": "or use email",
+    "emailPlaceholder": "your@email.com",
+    "magicLinkCta": "Email me a magic link",
+    "magicLinkHelper": "No password — just tap the link we send. ✨",
+    "magicLinkHelperNoName": "Add your first name to continue.",
+    "sentTitle": "Check your inbox",
+    "sentBody": "We sent a magic link to {{email}}. Tap it and you're in.",
+    "sentCta": "I tapped the link",
+    "sentChange": "Use a different email",
+    "footer": "Who Paid? · Version 0.1"
+  },
   "review": {
     "openingStore": "Opening App Store…",
     "thanksFeedback": "Thanks for the feedback",
