@@ -12,6 +12,8 @@ interface Props {
   profile: Profile;
   onBack: () => void;
   onSave: (next: Profile) => void;
+  isLoggedIn?: boolean;
+  onSignOut?: () => void;
 }
 
 function AppleLogo() {
@@ -22,7 +24,7 @@ function AppleLogo() {
   );
 }
 
-export function SignUpScreen({ profile, onBack, onSave }: Props) {
+export function SignUpScreen({ profile, onBack, onSave, isLoggedIn = false, onSignOut }: Props) {
   const { t } = useTranslation();
   const [name, setName] = useState(() => (profile.name === 'You' ? '' : profile.name));
   const [photo, setPhoto] = useState<string | null>(profile.photo);
@@ -80,33 +82,35 @@ export function SignUpScreen({ profile, onBack, onSave }: Props) {
       {/* scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px calc(var(--wp-pad-bottom) + 28px)', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-        {/* pitch card */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          background: 'var(--sun-100)',
-          border: '2px solid var(--ink-900)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '16px 18px',
-          boxShadow: '0 4px 0 var(--ink-900)',
-          animation: 'wp-pop-in .32s cubic-bezier(.34,1.4,.64,1) both',
-        }}>
-          <div style={{ flexShrink: 0 }}>
-            <GoldCoin size={50} mood="idle" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink-900)', lineHeight: 1.2, marginBottom: 5 }}>
-              {t('signUp.pitchHeadline')}
+        {/* pitch card — only shown when not yet signed in */}
+        {!isLoggedIn && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16,
+            background: 'var(--sun-100)',
+            border: '2px solid var(--ink-900)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 18px',
+            boxShadow: '0 4px 0 var(--ink-900)',
+            animation: 'wp-pop-in .32s cubic-bezier(.34,1.4,.64,1) both',
+          }}>
+            <div style={{ flexShrink: 0 }}>
+              <GoldCoin size={50} mood="idle" />
             </div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-700)', lineHeight: 1.45 }}>
-              {t('signUp.pitchSub')}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--ink-900)', lineHeight: 1.2, marginBottom: 5 }}>
+                {t('signUp.pitchHeadline')}
+              </div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-700)', lineHeight: 1.45 }}>
+                {t('signUp.pitchSub')}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* avatar */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, animation: 'wp-pop-in .32s .06s cubic-bezier(.34,1.4,.64,1) both' }}>
           <div style={{ position: 'relative', display: 'inline-block' }}>
-            <Avatar name={name || t('common.you')} src={photo} size="xl" ring />
+            <Avatar name={name || t('common.you')} src={photo} size="xl" ring ringVariant={isLoggedIn ? 'online' : 'offline'} />
             <button
               onClick={pickFile}
               aria-label={t('profile.uploadLabel')}
@@ -150,92 +154,116 @@ export function SignUpScreen({ profile, onBack, onSave }: Props) {
         </div>
 
         {/* auth section */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, animation: 'wp-pop-in .32s .14s cubic-bezier(.34,1.4,.64,1) both' }}>
-
-          {/* Apple */}
-          <button
-            onClick={handleApple}
-            disabled={!hasName}
-            className={`wp-btn wp-btn--lg wp-btn--apple wp-btn--block${!hasName ? '' : ''}`}
-          >
-            <AppleLogo />
-            {t('signUp.continueApple')}
-          </button>
-
-          {/* divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0' }}>
-            <div style={{ flex: 1, height: 1.5, background: 'var(--line)' }} />
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>
-              {t('signUp.orEmail')}
-            </span>
-            <div style={{ flex: 1, height: 1.5, background: 'var(--line)' }} />
+        {isLoggedIn ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, animation: 'wp-pop-in .32s .14s cubic-bezier(.34,1.4,.64,1) both' }}>
+            <button
+              onClick={() => onSave(buildProfile())}
+              disabled={!hasName}
+              className="wp-btn wp-btn--lg wp-btn--block"
+            >
+              Save profile
+            </button>
+            <button
+              onClick={onSignOut}
+              style={{
+                width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15,
+                color: 'var(--red-500, #ef4444)', padding: '12px 0', minHeight: 44,
+              }}
+            >
+              Sign out
+            </button>
           </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, animation: 'wp-pop-in .32s .14s cubic-bezier(.34,1.4,.64,1) both' }}>
 
-          {/* email block */}
-          {emailState === 'idle' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Input
-                placeholder={t('signUp.emailPlaceholder')}
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                value={email}
-                prefix={<Icon name="mail" size={16} color="var(--text-faint)" />}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <button
-                onClick={handleMagicLink}
-                disabled={!hasName || !hasEmail}
-                className="wp-btn wp-btn--lg wp-btn--secondary wp-btn--block"
-              >
-                {t('signUp.magicLinkCta')}
-              </button>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5 }}>
-                {hasName ? t('signUp.magicLinkHelper') : t('signUp.magicLinkHelperNoName')}
-              </p>
+            {/* Apple */}
+            <button
+              onClick={handleApple}
+              disabled={!hasName}
+              className="wp-btn wp-btn--lg wp-btn--apple wp-btn--block"
+            >
+              <AppleLogo />
+              {t('signUp.continueApple')}
+            </button>
+
+            {/* divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0' }}>
+              <div style={{ flex: 1, height: 1.5, background: 'var(--line)' }} />
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: 'var(--text-faint)', whiteSpace: 'nowrap' }}>
+                {t('signUp.orEmail')}
+              </span>
+              <div style={{ flex: 1, height: 1.5, background: 'var(--line)' }} />
             </div>
-          ) : (
-            <div style={{
-              background: 'var(--mint-50)',
-              border: '2px solid var(--ink-900)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '22px 20px 18px',
-              boxShadow: '0 4px 0 var(--mint-600)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center',
-              animation: 'wp-pop-in .32s cubic-bezier(.34,1.4,.64,1) both',
-            }}>
-              <div style={{ fontSize: 30, lineHeight: 1 }}>📬</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: 'var(--ink-900)', lineHeight: 1.2 }}>
-                {t('signUp.sentTitle')}
+
+            {/* email block */}
+            {emailState === 'idle' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Input
+                  placeholder={t('signUp.emailPlaceholder')}
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  prefix={<Icon name="mail" size={16} color="var(--text-faint)" />}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <button
+                  onClick={handleMagicLink}
+                  disabled={!hasName || !hasEmail}
+                  className="wp-btn wp-btn--lg wp-btn--secondary wp-btn--block"
+                >
+                  {t('signUp.magicLinkCta')}
+                </button>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5 }}>
+                  {hasName ? t('signUp.magicLinkHelper') : t('signUp.magicLinkHelperNoName')}
+                </p>
               </div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-700)', lineHeight: 1.5, margin: 0, maxWidth: 260 }}>
-                {t('signUp.sentBody', { email: email.trim() })}
-              </p>
-              <button
-                onClick={() => onSave(buildProfile())}
-                className="wp-btn wp-btn--lg wp-btn--block"
-                style={{ marginTop: 4 }}
-              >
-                {t('signUp.sentCta')}
-              </button>
-              <button
-                onClick={() => { setEmailState('idle'); setEmail(''); }}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13.5,
-                  color: 'var(--text-muted)', padding: '6px 0', minHeight: 44,
-                }}
-              >
-                {t('signUp.sentChange')}
-              </button>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div style={{
+                background: 'var(--mint-50)',
+                border: '2px solid var(--ink-900)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '22px 20px 18px',
+                boxShadow: '0 4px 0 var(--mint-600)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center',
+                animation: 'wp-pop-in .32s cubic-bezier(.34,1.4,.64,1) both',
+              }}>
+                <div style={{ fontSize: 30, lineHeight: 1 }}>📬</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 19, color: 'var(--ink-900)', lineHeight: 1.2 }}>
+                  {t('signUp.sentTitle')}
+                </div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-700)', lineHeight: 1.5, margin: 0, maxWidth: 260 }}>
+                  {t('signUp.sentBody', { email: email.trim() })}
+                </p>
+                <button
+                  onClick={() => onSave(buildProfile())}
+                  className="wp-btn wp-btn--lg wp-btn--block"
+                  style={{ marginTop: 4 }}
+                >
+                  {t('signUp.sentCta')}
+                </button>
+                <button
+                  onClick={() => { setEmailState('idle'); setEmail(''); }}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13.5,
+                    color: 'var(--text-muted)', padding: '6px 0', minHeight: 44,
+                  }}
+                >
+                  {t('signUp.sentChange')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* footer */}
-        <p style={{ margin: '4px 0 0', textAlign: 'center', fontSize: 12, color: 'var(--text-faint)', fontWeight: 500, letterSpacing: '.01em' }}>
-          {t('signUp.footer')}
-        </p>
+        {/* footer — only shown for sign-in flow */}
+        {!isLoggedIn && (
+          <p style={{ margin: '4px 0 0', textAlign: 'center', fontSize: 12, color: 'var(--text-faint)', fontWeight: 500, letterSpacing: '.01em' }}>
+            {t('signUp.footer')}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -74,7 +74,7 @@ export function StartScreen({
           aria-label={t('start.profileLabel')}
           style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', borderRadius: 999, display: 'flex' }}
         >
-          <Avatar name={profile.name || 'You'} src={profile.photo} size="md" ring />
+          <Avatar name={profile.name || 'You'} src={profile.photo} size="md" ring ringVariant={isLoggedIn ? 'online' : 'offline'} />
         </button>
       </div>
 

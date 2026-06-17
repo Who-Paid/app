@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { Profile, Table } from './lib/types';
 import { useTables, getClaimedSeat } from './lib/useTables';
-import { onAuthStateChange } from './lib/auth';
+import { onAuthStateChange, signOut } from './lib/auth';
 import { isAtLimit, isPro, proStatus, incrementWinCount, shouldShowReview } from './lib/pro';
 import { StartScreen } from './screens/StartScreen';
 import { TableScreen } from './screens/TableScreen';
@@ -284,6 +284,8 @@ export default function App() {
             profile={profile}
             onBack={() => setView('start')}
             onSave={onSaveProfile}
+            isLoggedIn={!!user}
+            onSignOut={async () => { await signOut(); setView('start'); }}
           />
         )}
 
