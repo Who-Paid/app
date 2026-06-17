@@ -39,6 +39,7 @@ interface GS {
   countdownEnd: number;
   countdownDur: number;
   baseSpeed: number; speed: number;
+  firstHit: boolean; // slow serve until first paddle contact
   target: number;
   winner: 'top' | 'bot' | null;
   // coin roll
@@ -65,7 +66,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 function makeGS(W: number, H: number, target: number): GS {
   const padH = 13, inset = 32;
   const padW = clamp(W * 0.15, 29, 84);  // half-width paddle
-  const ballR = W * 0.075;
+  const ballR = W * 0.042; // smaller = harder
   const baseSpeed = Math.max(660, H * 1.1);  // faster ball
   return {
     W, H, padW, padH, inset,
@@ -79,7 +80,7 @@ function makeGS(W: number, H: number, target: number): GS {
     topScore: 0, botScore: 0,
     phase: 'countdown', serveTo: 'bot',
     countdownEnd: 0, countdownDur: 1400,
-    baseSpeed, speed: baseSpeed,
+    baseSpeed, speed: baseSpeed, firstHit: false,
     target, winner: null,
     rotDeg: 0, prevBx: W / 2, prevBy: H / 2,
     pointers: new Map(), ctrlTop: null, ctrlBot: null,
@@ -93,8 +94,10 @@ function doServe(gs: GS) {
   const angle = (Math.random() - 0.5) * 0.5;
   const dir = gs.serveTo === 'top' ? -1 : 1;
   gs.bx = gs.W / 2; gs.by = gs.H / 2;
-  gs.bvx = gs.speed * Math.sin(angle);
-  gs.bvy = dir * gs.speed * Math.cos(angle);
+  // Start slow; accelerates to full speed on first paddle contact
+  const srvSpd = gs.speed * 0.38;
+  gs.bvx = srvSpd * Math.sin(angle);
+  gs.bvy = dir * srvSpd * Math.cos(angle);
 }
 
 function doCountdown(gs: GS, serveTo: 'top' | 'bot', dur: number, now: number) {
@@ -103,6 +106,7 @@ function doCountdown(gs: GS, serveTo: 'top' | 'bot', dur: number, now: number) {
   gs.bx = gs.W / 2; gs.by = gs.H / 2;
   gs.bvx = 0; gs.bvy = 0;
   gs.speed = gs.baseSpeed;
+  gs.firstHit = false;
   gs.countdownDur = dur;
   gs.countdownEnd = now + dur;
 }
@@ -111,9 +115,12 @@ function doBounce(gs: GS, side: 'top' | 'bot') {
   const px = side === 'top' ? gs.topX : gs.botX;
   const off = clamp((gs.bx - px) / (gs.padW / 2), -1, 1);
   const angle = off * 0.92;
-  const spd = Math.min(gs.baseSpeed * 2.4, gs.speed * 1.05);
+  // First hit: jump to full baseSpeed; subsequent hits: creep up by 5%
+  const prevSpd = gs.firstHit ? gs.speed : gs.baseSpeed;
+  gs.firstHit = true;
+  const spd = Math.min(gs.baseSpeed * 2.4, prevSpd * 1.05);
   gs.speed = spd;
-  const dir = side === 'top' ? 1 : -1;  // top paddle sends ball down, bot sends up
+  const dir = side === 'top' ? 1 : -1;
   gs.bvx = spd * Math.sin(angle);
   gs.bvy = dir * spd * Math.cos(angle);
 }
@@ -350,7 +357,7 @@ export function PongGame({
       gs.padW = clamp(nW * 0.15, 29, 84);
       gs.topSurf = gs.inset + gs.padH;
       gs.botSurf = nH - gs.inset - gs.padH;
-      gs.ballR = nW * 0.075;
+      gs.ballR = nW * 0.042;
       gs.baseSpeed = Math.max(660, nH * 1.1);
       const dpr2 = window.devicePixelRatio || 1;
       canvas.width = nW * dpr2;
@@ -442,6 +449,7 @@ export function PongGame({
     gs.topScore = 0; gs.botScore = 0;
     gs.winner = null; gs.lastHudKey = '';
     gs.speed = gs.baseSpeed;
+    gs.firstHit = false;
     gs.topMoved = false; gs.botMoved = false;
     gs.topX = gs.W * 0.35; gs.topTargetX = gs.W * 0.35;
     gs.botX = gs.W * 0.65; gs.botTargetX = gs.W * 0.65;
