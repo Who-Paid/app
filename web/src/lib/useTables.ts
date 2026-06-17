@@ -83,12 +83,23 @@ export function useTables() {
   }, [patch]);
 
   // Join a table shared via invite link, then surface it.
+  // Flip isMe so the receiver sees the sender at top and themselves at bottom.
   const joinByInvite = useCallback(async (tableId: string): Promise<Table | null> => {
     const t = await backend.join(tableId);
-    if (t) {
-      setTables((ts) => (ts.some((x) => x.id === t.id) ? ts : [t, ...ts]));
-    }
-    return t;
+    if (!t) return null;
+    const senderMe = t.people.find(p => p.isMe);
+    const others = t.people.filter(p => !p.isMe);
+    const receiverSlot = others[0];
+    const flipped: Table = {
+      ...t,
+      people: [
+        ...(senderMe ? [{ ...senderMe, isMe: false }] : []),
+        ...others.slice(1),
+        ...(receiverSlot ? [{ ...receiverSlot, isMe: true }] : []),
+      ],
+    };
+    setTables((ts) => (ts.some((x) => x.id === t.id) ? ts : [flipped, ...ts]));
+    return flipped;
   }, []);
 
   const deleteTable = useCallback((tableId: string) => {

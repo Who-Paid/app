@@ -9,6 +9,7 @@ import { EditSheet } from './screens/EditSheet';
 import { PaywallSheet } from './screens/PaywallSheet';
 import { ReviewPrompt } from './screens/ReviewPrompt';
 import { Toast } from './components/Toast';
+import { ShareLanding } from './screens/ShareLanding';
 
 type View = 'start' | 'table' | 'profile';
 
@@ -25,6 +26,9 @@ export default function App() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallTrigger, setPaywallTrigger] = useState<string | undefined>(undefined);
   const [showReview, setShowReview] = useState(false);
+  const [showInviteLanding, setShowInviteLanding] = useState(() =>
+    new URLSearchParams(window.location.search).has('share')
+  );
   const toastTimer = useRef<number | undefined>(undefined);
   const reviewTimer = useRef<number | undefined>(undefined);
 
@@ -48,7 +52,7 @@ export default function App() {
       } else {
         flash("That table link isn't available");
       }
-      history.replaceState(null, '', window.location.pathname + window.location.search);
+      history.replaceState(null, '', window.location.pathname);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -90,13 +94,14 @@ export default function App() {
   };
 
   const onInvite = async (table: Table) => {
-    const url = `${window.location.origin}${window.location.pathname}#/t/${table.id}`;
+    const url = `${window.location.origin}${window.location.pathname}?share#/t/${table.id}`;
+    const text = `Join "${table.name}" on Who Paid?`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Who Paid?', text: `Join "${table.name}" on Who Paid?`, url });
+        await navigator.share({ title: 'Who Paid?', text, url });
         return;
       }
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       flash(syncEnabled ? "Invite link copied 🔗 — they'll see this table live" : 'Invite link copied 🔗');
     } catch {
       flash('Invite link: ' + url);
@@ -167,6 +172,13 @@ export default function App() {
         )}
 
         <Toast msg={toast} />
+
+        {showInviteLanding && (
+          <ShareLanding
+            tableName={current?.name ?? 'this table'}
+            onDismiss={() => setShowInviteLanding(false)}
+          />
+        )}
 
         {editPerson && editTable && (
           <EditSheet
