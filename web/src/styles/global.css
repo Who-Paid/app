@@ -3,7 +3,7 @@
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
-  font-family: var(--font-body);
+  font-family: var(--font-body), sans-serif;
   font-size: var(--fs-body);
   line-height: var(--lh-normal);
   color: var(--text-body);
@@ -13,14 +13,14 @@ body {
   overscroll-behavior: none;
 }
 h1,h2,h3,h4 {
-  font-family: var(--font-display); font-weight: var(--fw-semibold);
+  font-family: var(--font-display), sans-serif; font-weight: var(--fw-semibold);
   color: var(--text-strong); line-height: var(--lh-snug);
   letter-spacing: var(--ls-tight); margin: 0; text-wrap: balance;
 }
 p { margin: 0; text-wrap: pretty; }
 button { font: inherit; }
-.wp-amount { font-family: var(--font-mono); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; letter-spacing: var(--ls-tight); }
-.wp-eyebrow { font-family: var(--font-body); font-weight: var(--fw-extra); font-size: var(--fs-xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-muted); }
+.wp-amount { font-family: var(--font-mono), monospace; font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; letter-spacing: var(--ls-tight); }
+.wp-eyebrow { font-family: var(--font-body), sans-serif; font-weight: var(--fw-extra); font-size: var(--fs-xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--text-muted); }
 ::selection { background: var(--sun-200); color: var(--ink-900); }
 
 /* ---- App shell: fill the phone; on desktop show a centered phone frame ---- */
@@ -49,7 +49,7 @@ button { font: inherit; }
 .wp-btn {
   --_pop: var(--pop-brand); --_bg: var(--mint-400); --_fg: var(--text-on-brand); --_bd: transparent;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  font-family: var(--font-display); font-weight: var(--fw-semibold); line-height: 1;
+  font-family: var(--font-display), sans-serif; font-weight: var(--fw-semibold); line-height: 1;
   border: 2px solid var(--_bd); background: var(--_bg); color: var(--_fg);
   border-radius: var(--radius-pill); box-shadow: var(--_pop); cursor: pointer; white-space: nowrap;
   transition: transform .08s ease, box-shadow .08s ease, background .15s ease, filter .15s ease;
@@ -89,7 +89,7 @@ button { font: inherit; }
 /* ---- Avatar ---- */
 .wp-avatar {
   display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill);
-  font-family: var(--font-display); font-weight: var(--fw-semibold); color: #fff;
+  font-family: var(--font-display), sans-serif; font-weight: var(--fw-semibold); color: #fff;
   background: var(--avatar-1); overflow: hidden; flex: none; line-height: 1; user-select: none;
 }
 .wp-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -102,7 +102,7 @@ button { font: inherit; }
 /* ---- Badge ---- */
 .wp-badge {
   --_bg: var(--mint-50); --_fg: var(--mint-700);
-  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-body);
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-body), sans-serif;
   font-weight: var(--fw-extra); font-size: var(--fs-xs); letter-spacing: .01em; line-height: 1;
   padding: 6px 11px; border-radius: var(--radius-pill); background: var(--_bg); color: var(--_fg); white-space: nowrap;
 }
@@ -120,17 +120,17 @@ button { font: inherit; }
 
 /* ---- Input ---- */
 .wp-field { display: flex; flex-direction: column; gap: 7px; }
-.wp-field__label { font-family: var(--font-body); font-weight: var(--fw-extra); font-size: var(--fs-sm); color: var(--text-strong); }
+.wp-field__label { font-family: var(--font-body), sans-serif; font-weight: var(--fw-extra); font-size: var(--fs-sm); color: var(--text-strong); }
 .wp-field__wrap {
   display: flex; align-items: center; gap: 8px; background: var(--card);
   border: 2px solid var(--border-card); border-radius: var(--radius-md); padding: 0 16px;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 .wp-field__wrap:focus-within { border-color: var(--mint-400); box-shadow: var(--ring); }
-.wp-field__prefix { font-family: var(--font-mono); font-weight: var(--fw-bold); color: var(--text-muted); }
-.wp-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-family: var(--font-body); font-size: var(--fs-body); color: var(--text-strong); padding: 13px 0; }
+.wp-field__prefix { font-family: var(--font-mono), monospace; font-weight: var(--fw-bold); color: var(--text-muted); }
+.wp-input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-family: var(--font-body), sans-serif; font-size: var(--fs-body); color: var(--text-strong); padding: 13px 0; }
 .wp-input::placeholder { color: var(--text-faint); }
-.wp-input--amount { font-family: var(--font-mono); font-weight: var(--fw-bold); font-size: var(--fs-title); }
+.wp-input--amount { font-family: var(--font-mono), monospace; font-weight: var(--fw-bold); font-size: var(--fs-title); }
 
 /* ---- Animations ---- */
 @keyframes wp-fall { to { transform: translateY(900px) rotate(720deg); opacity: 0; } }
