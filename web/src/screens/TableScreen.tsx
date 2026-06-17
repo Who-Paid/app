@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Table, Person } from '../lib/types';
 import { paidLabel } from '../lib/util';
 import { Avatar } from '../components/ui/Avatar';
@@ -18,6 +19,25 @@ function seededRand(seed: string): number {
     h = Math.imul(h, 16777619) >>> 0;
   }
   return (h >>> 0) / 4294967296;
+}
+
+function PaidStamp({ dateLabel }: { dateLabel: string }) {
+  return (
+    <div style={{
+      transform: 'rotate(-8deg)', color: 'var(--mint-600)', mixBlendMode: 'multiply',
+      border: '3px solid currentColor', borderRadius: 12, padding: '7px 16px 8px',
+      boxShadow: '0 0 0 2px var(--mint-50), inset 0 0 0 2px currentColor',
+      display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+      opacity: 0.88,
+    }}>
+      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 23, lineHeight: 0.95, letterSpacing: 1.5, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Paid last</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ width: 4, height: 4, borderRadius: 9, background: 'currentColor', flexShrink: 0 }} />
+        {dateLabel}
+        <span style={{ width: 4, height: 4, borderRadius: 9, background: 'currentColor', flexShrink: 0 }} />
+      </span>
+    </div>
+  );
 }
 
 function PongIcon({ size = 24 }: { size?: number }) {
@@ -44,6 +64,7 @@ interface Props {
 }
 
 export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, onInvite, onSavePerson }: Props) {
+  const { t } = useTranslation();
   const order = table.people; // others first, "me" last (bottom)
   const n = order.length;
   const paidIdx = order.findIndex((p) => p.id === table.paidBy);
@@ -520,7 +541,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                 {isInlineEdit ? (
                   <input
                     type="text"
-                    placeholder="Add name"
+                    placeholder={t('common.addName')}
                     autoFocus={!hasPayer}
                     value={inlineNames[p.id] ?? ''}
                     onChange={e => setInlineNames(prev => ({ ...prev, [p.id]: e.target.value }))}
@@ -545,25 +566,25 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
-                      {named ? p.name : (isMe ? 'You' : 'Add name')}
+                      {named ? p.name : (isMe ? t('common.you') : t('common.addName'))}
                     </span>
                     {isMe && named && (
-                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: Math.max(10, fontSize * 0.5), letterSpacing: '0.05em', color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--mint-700)', background: p.photo ? 'rgba(255,255,255,.2)' : 'var(--mint-100)', borderRadius: 6, padding: '2px 6px', lineHeight: 1.4 }}>me</span>
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: Math.max(10, fontSize * 0.5), letterSpacing: '0.05em', color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--mint-700)', background: p.photo ? 'rgba(255,255,255,.2)' : 'var(--mint-100)', borderRadius: 6, padding: '2px 6px', lineHeight: 1.4 }}>{t('common.me')}</span>
                     )}
                   </div>
                 )}
                 {isPayer
-                  ? <Badge color="mint" solid dot>paid last · {paidLabel(table.paidAt)}</Badge>
+                  ? <PaidStamp dateLabel={paidLabel(table.paidAt) ?? ''} />
                   : (showNudge && !isMe && named)
-                    ? <Badge color="neutral" dot><ShareUpIcon size={12} style={{ verticalAlign: '-1px', marginRight: 3 }} />not in sync</Badge>
+                    ? <Badge color="neutral" dot><ShareUpIcon size={12} style={{ verticalAlign: '-1px', marginRight: 3 }} />{t('table.notInSync')}</Badge>
                     : p.amount != null
                       ? <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                           <span className="wp-amount" style={{ fontSize: 14, color: p.photo ? '#fff' : 'var(--text-muted)' }}>${p.amount.toFixed(2)}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.55)' : 'var(--text-faint)', letterSpacing: '0.02em' }}>+ add payment</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.55)' : 'var(--text-faint)', letterSpacing: '0.02em' }}>{t('table.addPayment')}</span>
                         </div>
                       : !isInlineEdit
                         ? <span style={{ fontSize: 12.5, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--text-faint)' }}>
-                            tap to edit
+                            {t('table.tapToEdit')}
                           </span>
                         : null}
               </div>
@@ -603,9 +624,9 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
 
       {/* top bar — hidden while Pong is running */}
       {mode !== 'pong' && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 35, padding: 'var(--wp-pad-top) 14px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(180deg, rgba(255,247,238,.92), rgba(255,247,238,0))' }}>
-        <IconButton label="Back" onClick={onBack}><Icon name="arrow-left" size={22} /></IconButton>
+        <IconButton label={t('table.backLabel')} onClick={onBack}><Icon name="arrow-left" size={22} /></IconButton>
         <div style={{ display: 'flex', gap: 6 }}>
-          {n < 4 && <IconButton label="Add person" onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
+          {n < 4 && <IconButton label={t('table.addPersonLabel')} onClick={() => onAddPerson(table.id)}><Icon name="user-plus" size={20} /></IconButton>}
           <div style={{ position: 'relative' }}>
             {showNudge && (
               <span style={{
@@ -615,7 +636,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
               }} />
             )}
             <IconButton
-              label="Invite"
+              label={t('table.inviteLabel')}
               onClick={handleInvite}
               style={showNudge ? { background: 'var(--mint-50)' } : undefined}
             >
@@ -654,11 +675,11 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             boxShadow: 'var(--shadow-lg)',
           }}>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, lineHeight: 1.3 }}>
-              Share table with {other!.name} to be in sync
+              {t('table.syncNudge', { name: other!.name })}
             </div>
             <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--mint-300)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
               <ShareUpIcon size={12} />
-              The coin's a shared responsibility ;-)
+              {t('table.syncNudgeSub')}
             </div>
           </div>
         </div>
@@ -683,7 +704,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             }}
           >
             <Icon name="dices" size={20} />
-            Roll the dice
+            {t('table.rollDice')}
           </button>
           <div style={{ flex: 1 }} />
           <button
@@ -697,7 +718,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             }}
           >
             <PongIcon size={18} />
-            Pong for it
+            {t('table.pongForIt')}
           </button>
         </div>
       )}
@@ -718,7 +739,7 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             }}
           >
             <Icon name="dices" size={20} />
-            Loser pays
+            {t('table.loserPays')}
           </button>
         </div>
       )}

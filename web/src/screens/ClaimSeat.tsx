@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { GoldCoin } from '../components/GoldCoin';
 import { Avatar } from '../components/ui/Avatar';
 import type { Table } from '../lib/types';
 
 export function ClaimSeat({ table, onClaim }: { table: Table; onClaim: (personId: string) => void }) {
+  const { t } = useTranslation();
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 90, background: 'var(--surface-app)',
@@ -12,10 +14,10 @@ export function ClaimSeat({ table, onClaim }: { table: Table; onClaim: (personId
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10 }}>
         <GoldCoin size={54} mood="idle" />
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 11.5, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--text-faint)' }}>Joining</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 11.5, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--text-faint)' }}>{t('claimSeat.joining')}</div>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: 'var(--ink-700)' }}>{table.name}</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 27, margin: '6px 0 2px' }}>Who are you?</h2>
-        <p style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--text-muted)', margin: 0 }}>Pick your name to join the table</p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 27, margin: '6px 0 2px' }}>{t('claimSeat.title')}</h2>
+        <p style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--text-muted)', margin: 0 }}>{t('claimSeat.subtitle')}</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 28 }}>
@@ -29,9 +31,9 @@ export function ClaimSeat({ table, onClaim }: { table: Table; onClaim: (personId
             }}>
               <Avatar name={p.name || 'Guest'} src={p.profilePhoto ?? p.photo ?? null} size="sm" />
               <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--ink-300)' }}>
-                {p.name || 'Someone'}
+                {p.name || t('claimSeat.someone')}
               </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 12, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>already joined</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 12, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>{t('claimSeat.alreadyJoined')}</span>
             </div>
           ) : (
             <button key={p.id} onClick={() => onClaim(p.id)} className="wp-claim-opt"
@@ -42,9 +44,9 @@ export function ClaimSeat({ table, onClaim }: { table: Table; onClaim: (personId
               }}>
               <Avatar name={p.name || 'Guest'} src={p.profilePhoto ?? p.photo ?? null} size="sm" />
               <span style={{ flex: 1, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 19, color: 'var(--ink-900)' }}>
-                {p.name || 'Open seat'}
+                {p.name || t('common.openSeat')}
               </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>this is me ›</span>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 13, color: 'var(--ink-300)', whiteSpace: 'nowrap' }}>{t('claimSeat.thisIsMe')}</span>
             </button>
           );
         })}

@@ -1,22 +1,18 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import type { Person, Table } from '../lib/types';
 import { compressImage } from '../lib/compressImage';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Icon } from '../components/ui/Icon';
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function fmtTime(iso: string): string {
+function fmtTime(iso: string, lang: string): string {
   const d = new Date(iso);
   const now = new Date();
   const sameDay = d.toDateString() === now.toDateString();
-  if (sameDay) {
-    const h = d.getHours(), m = d.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
-  }
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  if (sameDay) return d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(lang, { day: 'numeric', month: 'short' });
 }
 
 interface Props {
@@ -28,6 +24,7 @@ interface Props {
 }
 
 export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState(person.name || '');
   const [photo, setPhoto] = useState<string | null>(person.photo || null);
   const [payments, setPayments] = useState<{ id: string; amount: number; addedAt?: string }[]>(() => {
@@ -83,7 +80,7 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
         <div style={{ width: 44, height: 5, borderRadius: 99, background: 'var(--ink-300)', margin: '0 auto 16px' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h2 style={{ fontSize: 23 }}>{person.isMe ? 'You' : (person.name || 'Add name')}</h2>
+          <h2 style={{ fontSize: 23 }}>{person.isMe ? t('editSheet.titleSelf') : (person.name || t('common.addName'))}</h2>
           <button onClick={onClose} aria-label="Close" style={{
             width: 36, height: 36, borderRadius: 99, border: 'none', cursor: 'pointer',
             background: 'var(--surface-sunken)', color: 'var(--text-muted)',
@@ -101,29 +98,29 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
             }}>{!photo && <Icon name="camera" size={26} />}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-strong)' }}>
-                {photo ? 'Photo added' : 'Snap a photo'}
+                {photo ? t('editSheet.photoAdded') : t('editSheet.snapPhoto')}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>
-                {person.isMe ? 'Beautify my side of the table.' : 'Beautify their side of the table.'}
+                {person.isMe ? t('editSheet.beautifySelf') : t('editSheet.beautifyOther')}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <Button variant="secondary" size="sm" onClick={() => fileRef.current?.click()}>
-                  {photo ? 'Replace' : 'Add photo'}
+                  {photo ? t('editSheet.replacePhoto') : t('editSheet.addPhoto')}
                 </Button>
-                {photo && <Button variant="ghost" size="sm" onClick={() => setPhoto(null)}>Remove</Button>}
+                {photo && <Button variant="ghost" size="sm" onClick={() => setPhoto(null)}>{t('editSheet.removePhoto')}</Button>}
               </div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={pickPhoto} style={{ display: 'none' }} />
           </div>
 
           {!person.isMe && (
-            <Input label="Their name" placeholder="e.g. Daniel" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input label={t('editSheet.theirName')} placeholder={t('editSheet.namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} />
           )}
 
           {/* Payments section */}
           <div style={{ background: 'var(--surface-sunken)', borderRadius: 16, padding: '12px 14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.03em' }}>Total</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.03em' }}>{t('editSheet.total')}</span>
               <span style={{
                 fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22,
                 color: payments.length > 0 ? 'var(--ink-900)' : 'var(--ink-300)',
@@ -144,7 +141,7 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {p.addedAt && (
                         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-faint)', fontVariantNumeric: 'tabular-nums' }}>
-                          {fmtTime(p.addedAt)}
+                          {fmtTime(p.addedAt, i18n.language || 'en')}
                         </span>
                       )}
                       <button
@@ -177,7 +174,7 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
                     fontFamily: 'var(--font-display)',
                   }}
                 />
-                <Button variant="primary" size="sm" onClick={confirmAdd}>Add</Button>
+                <Button variant="primary" size="sm" onClick={confirmAdd}>{t('editSheet.add')}</Button>
               </div>
             ) : (
               <button
@@ -189,18 +186,18 @@ export function EditSheet({ table, person, onClose, onSave, onRemove }: Props) {
                 }}
               >
                 <Icon name="plus" size={14} />
-                Add payment
+                {t('editSheet.addPaymentLabel')}
               </button>
             )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 2 }}>
-            <Button variant="primary" size="lg" block onClick={save}>Save</Button>
+            <Button variant="primary" size="lg" block onClick={save}>{t('common.save')}</Button>
             {table.people.length >= 3 && !person.isMe && (
               <Button variant="ghost" size="md" block iconLeft={<Icon name="trash-2" size={18} />}
                 onClick={() => { onRemove(table.id, person.id); onClose(); }}
                 style={{ color: 'var(--red-500, #ef4444)' }}>
-                Remove {person.name || 'this person'}
+                {t('editSheet.remove', { name: person.name || t('common.openSeat') })}
               </Button>
             )}
           </div>

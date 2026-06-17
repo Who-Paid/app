@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Profile } from '../lib/types';
 import { compressImage } from '../lib/compressImage';
 import { Avatar } from '../components/ui/Avatar';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function ProfileScreen({ profile, onBack, onSave }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState(profile.name);
   const [photo, setPhoto] = useState<string | null>(profile.photo);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -46,9 +48,9 @@ export function ProfileScreen({ profile, onBack, onSave }: Props) {
     }}>
       {/* top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px 16px' }}>
-        <IconButton label="Back" onClick={onBack}><Icon name="arrow-left" size={22} /></IconButton>
+        <IconButton label={t('common.back')} onClick={onBack}><Icon name="arrow-left" size={22} /></IconButton>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--ink-900)' }}>
-          Profile
+          {t('profile.title')}
         </span>
       </div>
 
@@ -59,7 +61,7 @@ export function ProfileScreen({ profile, onBack, onSave }: Props) {
             <Avatar name={name || 'You'} src={photo} size="xl" ring />
             <button
               onClick={pickFile}
-              aria-label="Upload photo"
+              aria-label={t('profile.uploadLabel')}
               style={{
                 position: 'absolute', bottom: 0, right: 0,
                 width: 32, height: 32, borderRadius: 99,
@@ -80,21 +82,21 @@ export function ProfileScreen({ profile, onBack, onSave }: Props) {
               color: 'var(--mint-600)', padding: '2px 0', whiteSpace: 'nowrap',
             }}
           >
-            {photo ? 'Change photo' : 'Upload a photo'}
+            {photo ? t('profile.changePhoto') : t('profile.uploadPhoto')}
           </button>
           <p style={{
             margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-muted)',
             textAlign: 'center', lineHeight: 1.5, maxWidth: 240,
           }}>
-            This photo is shared with people in your synced tables.
+            {t('profile.photoNote')}
           </p>
           <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{ display: 'none' }} />
         </div>
 
         {/* name */}
         <Input
-          label="First name"
-          placeholder="Your first name"
+          label={t('profile.firstName')}
+          placeholder={t('profile.firstNamePlaceholder')}
           value={name}
           maxLength={24}
           onChange={(e) => setName(e.target.value)}
@@ -106,7 +108,7 @@ export function ProfileScreen({ profile, onBack, onSave }: Props) {
           disabled={!canSave}
           onClick={() => onSave({ name: name.trim(), photo })}
         >
-          Save profile
+          {t('profile.save')}
         </Button>
       </div>
     </div>

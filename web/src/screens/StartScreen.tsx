@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Profile, Table } from '../lib/types';
 import type { ProStatus } from '../lib/pro';
 import { GoldCoin } from '../components/GoldCoin';
@@ -40,6 +41,7 @@ export function StartScreen({
   tables: Table[]; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void;
   status: ProStatus; profile: Profile; onProfile: () => void;
 }) {
+  const { t } = useTranslation();
   const atLimit = status === 'free' && tables.length >= FREE_TABLE_LIMIT;
   const [confirmId, setConfirmId] = useState<string | null>(null);
   return (
@@ -57,17 +59,17 @@ export function StartScreen({
             </span>
             {status === 'trial' && (
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mint-600)', marginTop: -2 }}>
-                Pro trial · {trialDaysLeft()}d left
+                {t('start.proTrial', { days: trialDaysLeft() })}
               </div>
             )}
             {status === 'paid' && (
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mint-600)', marginTop: -2 }}>Pro</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mint-600)', marginTop: -2 }}>{t('start.pro')}</div>
             )}
           </div>
         </div>
         <button
           onClick={onProfile}
-          aria-label="Your profile"
+          aria-label={t('start.profileLabel')}
           style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer', borderRadius: 999, display: 'flex' }}
         >
           <Avatar name={profile.name || 'You'} src={profile.photo} size="md" ring />
@@ -76,9 +78,11 @@ export function StartScreen({
 
       {/* hero */}
       <div style={{ marginTop: 4 }}>
-        <h1 style={{ fontSize: 38, lineHeight: 1.02 }}>Who paid last?<br />Who pays next?</h1>
+        <h1 style={{ fontSize: 38, lineHeight: 1.02 }}>
+          {t('start.heroTitle').split('\n').map((line, i) => <span key={i}>{line}{i === 0 && <br />}</span>)}
+        </h1>
         <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: 15, marginTop: 10 }}>
-          Find out or play for it. Loser always pays.
+          {t('start.heroSub')}
         </p>
       </div>
 
@@ -88,48 +92,48 @@ export function StartScreen({
           size="lg" block onClick={onNew}
           iconLeft={<Icon name={atLimit ? 'lock' : 'plus'} size={20} />}
         >
-          Start new table
+          {t('start.newTable')}
         </Button>
         {atLimit && (
           <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text-faint)', marginTop: 8 }}>
-            {FREE_TABLE_LIMIT} of {FREE_TABLE_LIMIT} free tables used · Go Pro for unlimited
+            {t('start.tableLimitNote', { limit: FREE_TABLE_LIMIT })}
           </p>
         )}
       </div>
 
       {/* existing tables */}
       <div>
-        <div className="wp-eyebrow" style={{ marginBottom: 12 }}>Your tables</div>
+        <div className="wp-eyebrow" style={{ marginBottom: 12 }}>{t('start.yourTables')}</div>
         {tables.length === 0 ? (
           <p style={{ color: 'var(--text-faint)', fontWeight: 600, fontSize: 14 }}>
-            No tables yet — start one above.
+            {t('start.noTables')}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {tables.map((t) => {
-              const payer = t.people.find((p) => p.id === t.paidBy);
-              const payerName = payer ? (payer.isMe ? 'You' : payer.name) : '—';
-              const others = t.people.filter((p) => !p.isMe).map((p) => p.name).filter(Boolean).join(' & ');
-              const label = others || 'New table';
-              const isConfirming = confirmId === t.id;
+            {tables.map((tbl) => {
+              const payer = tbl.people.find((p) => p.id === tbl.paidBy);
+              const payerName = payer ? (payer.isMe ? t('common.you') : payer.name) : '—';
+              const others = tbl.people.filter((p) => !p.isMe).map((p) => p.name).filter(Boolean).join(' & ');
+              const label = others || t('common.newTable');
+              const isConfirming = confirmId === tbl.id;
               return (
-                <div key={t.id} className="wp-card wp-card--pad-md wp-card--interactive"
-                  onClick={() => { if (!isConfirming) onOpen(t.id); }}
+                <div key={tbl.id} className="wp-card wp-card--pad-md wp-card--interactive"
+                  onClick={() => { if (!isConfirming) onOpen(tbl.id); }}
                   style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <MiniTable table={t} />
+                    <MiniTable table={tbl} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, color: 'var(--ink-900)' }}>
                         {label}
                       </div>
                       <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, fontWeight: 600 }}>
-                        {payer ? `${payerName} paid last · ${paidLabel(t.paidAt)}` : 'No coin tossed yet'}
+                        {payer ? t('start.paidLast', { name: payerName, time: paidLabel(tbl.paidAt) }) : t('start.noToss')}
                       </div>
                     </div>
-                    {t.synced ? <Badge color="mint" dot>synced</Badge> : <Badge color="neutral">just you</Badge>}
+                    {tbl.synced ? <Badge color="mint" dot>{t('start.syncedBadge')}</Badge> : <Badge color="neutral">{t('start.justYouBadge')}</Badge>}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmId(isConfirming ? null : t.id); }}
-                      aria-label="Delete table"
+                      onClick={(e) => { e.stopPropagation(); setConfirmId(isConfirming ? null : tbl.id); }}
+                      aria-label={t('common.delete')}
                       style={{ background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer', color: 'var(--text-faint)', lineHeight: 0 }}
                     >
                       <Icon name="trash-2" size={16} />
@@ -138,14 +142,14 @@ export function StartScreen({
                   {isConfirming && (
                     <div onClick={(e) => e.stopPropagation()}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>Delete {label}?</span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>{t('start.deleteConfirm', { label })}</span>
                       <button onClick={() => setConfirmId(null)}
                         style={{ background: 'none', border: 'none', padding: '4px 8px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
-                        Cancel
+                        {t('common.cancel')}
                       </button>
-                      <button onClick={() => { setConfirmId(null); onDelete(t.id); }}
+                      <button onClick={() => { setConfirmId(null); onDelete(tbl.id); }}
                         style={{ background: 'var(--red-500, #ef4444)', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}>
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   )}

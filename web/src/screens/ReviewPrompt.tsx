@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { markReviewAsked } from '../lib/pro';
 
 // Replace with your actual App Store / Play Store URL before publishing
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function ReviewPrompt({ onClose }: Props) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(0);
   const [rating, setRating] = useState(0);
   const [done, setDone] = useState(false);
@@ -41,17 +43,17 @@ export function ReviewPrompt({ onClose }: Props) {
           <div style={{ textAlign: 'center', padding: '6px 0' }}>
             <div style={{ fontSize: 30, marginBottom: 6 }}>{rating >= 4 ? '🙌' : '🙏'}</div>
             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16 }}>
-              {rating >= 4 ? 'Opening App Store…' : 'Thanks for the feedback'}
+              {rating >= 4 ? t('review.openingStore') : t('review.thanksFeedback')}
             </div>
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-                Enjoying WhoPaid?
+                {t('review.enjoying')}
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 12 }}>
-                A rating helps us reach more groups.
+                {t('review.ratingHelps')}
               </div>
               <div style={{ display: 'flex', gap: 4 }}>
                 {[1, 2, 3, 4, 5].map((n) => (

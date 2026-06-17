@@ -1,0 +1,127 @@
+{
+  "common": {
+    "you": "Du",
+    "me": "ich",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "back": "Zurück",
+    "addName": "Name hinzufügen",
+    "openSeat": "Freier Platz",
+    "newTable": "Neuer Tisch"
+  },
+  "time": {
+    "today": "heute",
+    "yesterday": "gestern",
+    "daysAgo": "vor {{count}} Tagen"
+  },
+  "start": {
+    "proTrial": "Pro-Test · noch {{days}} Tage",
+    "pro": "Pro",
+    "profileLabel": "Dein Profil",
+    "heroTitle": "Wer hat zuletzt gezahlt?\nWer zahlt als Nächstes?",
+    "heroSub": "Finde es heraus oder spiel darum. Der Verlierer zahlt immer.",
+    "newTable": "Neuen Tisch starten",
+    "tableLimitNote": "{{limit}} von {{limit}} kostenlosen Tischen genutzt · Pro für unbegrenzte Tische",
+    "yourTables": "Deine Tische",
+    "noTables": "Noch keine Tische — starte oben einen.",
+    "paidLast": "{{name}} hat zuletzt gezahlt · {{time}}",
+    "noToss": "Noch keine Münze geworfen",
+    "syncedBadge": "synchronisiert",
+    "justYouBadge": "nur du",
+    "deleteConfirm": "{{label}} löschen?"
+  },
+  "table": {
+    "paidLast": "zuletzt gezahlt · {{time}}",
+    "notInSync": "nicht synchronisiert",
+    "tapToEdit": "tippen zum Bearbeiten",
+    "addPayment": "+ Zahlung hinzufügen",
+    "rollDice": "Würfeln",
+    "pongForIt": "Pong spielen",
+    "loserPays": "Verlierer zahlt",
+    "backLabel": "Zurück",
+    "addPersonLabel": "Person hinzufügen",
+    "inviteLabel": "Einladen",
+    "syncNudge": "Teile den Tisch mit {{name}}, um zu synchronisieren",
+    "syncNudgeSub": "Die Münze ist gemeinsame Verantwortung ;-)"
+  },
+  "shareLanding": {
+    "invited": "Du wurdest zu \"{{name}}\" eingeladen",
+    "subtitle": "Speichere den Tisch und sieh die Münze live — hol dir Who Paid? zum Synchronisieren.",
+    "download": "Im App Store laden",
+    "continueWeb": "Im Browser fortfahren"
+  },
+  "claimSeat": {
+    "joining": "Beitreten",
+    "title": "Wer bist du?",
+    "subtitle": "Wähle deinen Namen, um dem Tisch beizutreten",
+    "thisIsMe": "das bin ich ›",
+    "alreadyJoined": "bereits beigetreten",
+    "someone": "Jemand"
+  },
+  "onboarding": {
+    "title": "Wähle deinen Namen",
+    "body": "...den, den die Leute wirklich kennen.",
+    "bodySub": "Deine Gruppe sieht ihn jedes Mal, wenn du zahlst — oder auch nicht.",
+    "placeholder": "z. B. Alex, Sandino, Der der immer zahlt…",
+    "cta": "Das bin ich →",
+    "skip": "jetzt überspringen"
+  },
+  "paywall": {
+    "title": "Halte die Rechnung offen",
+    "defaultTrigger": "Du hast {{count}} von {{limit}} kostenlosen Tischen gestartet.",
+    "benefit1": "Unbegrenzte Tische — für jedes Essen, jede Reise und jede Runde",
+    "benefit2": "Vollständige Zahlungshistorie, nie den Überblick verlieren",
+    "benefit3": "Mit der ganzen Gruppe synchronisieren für geteilte Tische",
+    "planTitle": "Pro — alles unbegrenzt",
+    "cancelAnytime": "Jederzeit kündbar",
+    "perMonth": "/Monat",
+    "trialCta": "7-Tage-Gratis-Test starten",
+    "maybeLater": "Vielleicht später"
+  },
+  "editSheet": {
+    "titleSelf": "Du",
+    "photoAdded": "Foto hinzugefügt",
+    "snapPhoto": "Foto machen",
+    "beautifySelf": "Meine Seite des Tisches verschönern.",
+    "beautifyOther": "Ihre Seite des Tisches verschönern.",
+    "replacePhoto": "Ersetzen",
+    "addPhoto": "Foto hinzufügen",
+    "removePhoto": "Entfernen",
+    "theirName": "Ihr Name",
+    "namePlaceholder": "z. B. Daniel",
+    "total": "Gesamt",
+    "addPaymentLabel": "Zahlung hinzufügen",
+    "add": "Hinzufügen",
+    "remove": "{{name}} entfernen"
+  },
+  "profile": {
+    "title": "Profil",
+    "changePhoto": "Foto ändern",
+    "uploadPhoto": "Foto hochladen",
+    "photoNote": "Dieses Foto wird mit Personen in deinen synchronisierten Tischen geteilt.",
+    "firstName": "Vorname",
+    "firstNamePlaceholder": "Dein Vorname",
+    "save": "Profil speichern",
+    "uploadLabel": "Foto hochladen"
+  },
+  "review": {
+    "openingStore": "App Store wird geöffnet…",
+    "thanksFeedback": "Danke für dein Feedback",
+    "enjoying": "Gefällt dir WhoPaid?",
+    "ratingHelps": "Eine Bewertung hilft uns, mehr Gruppen zu erreichen."
+  },
+  "toasts": {
+    "joinedShared": "Geteiltem Tisch beigetreten 🔗",
+    "openedShared": "Geteilter Tisch geöffnet",
+    "linkNotAvailable": "Dieser Tischlink ist nicht verfügbar",
+    "inviteCopiedSync": "Einladungslink kopiert 🔗 — sie sehen den Tisch live",
+    "inviteCopied": "Einladungslink kopiert 🔗",
+    "trialStarted": "7-Tage-Pro-Test gestartet — unbegrenzte Tische freigeschaltet 🎉",
+    "profileSaved": "Profil gespeichert ✓",
+    "claimedSeat": "Du bist als {{name}} dabei 🎉",
+    "thirdSeatAdded": "Dritter Platz hinzugefügt — Tisch wird gedrittelt",
+    "fourthSeatAdded": "Vierter Platz hinzugefügt — Tisch wird geviertelt",
+    "paywallTrigger4Person": "Ein 4-Personen-Tisch ist ein Pro-Feature. Ganz einfach vierwege aufteilen."
+  }
+}

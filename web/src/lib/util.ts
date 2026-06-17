@@ -1,17 +1,19 @@
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+import i18n from '../i18n';
 
 /** "today" / "yesterday" / "3 days ago" / "14 Jun" from an ISO string. */
 export function paidLabel(iso: string | null): string | null {
   if (!iso) return null;
+  const t = i18n.t.bind(i18n);
   const d = new Date(iso);
   const now = new Date();
   const days = Math.round(
     (new Date(now.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86400000,
   );
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days} days ago`;
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  if (days <= 0) return t('time.today');
+  if (days === 1) return t('time.yesterday');
+  if (days < 7) return t('time.daysAgo', { count: days });
+  const lang = i18n.language || 'en';
+  return `${d.getDate()} ${d.toLocaleString(lang, { month: 'short' })}`;
 }
 
 export const nowISO = () => new Date().toISOString();

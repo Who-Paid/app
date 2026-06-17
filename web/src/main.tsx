@@ -2,6 +2,7 @@ import { StrictMode, Component, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/tokens.css';
 import './styles/global.css';
+import './i18n';
 import App from './App';
 
 // In development, unregister any lingering service workers from a previous build

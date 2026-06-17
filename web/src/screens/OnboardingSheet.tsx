@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GoldCoin } from '../components/GoldCoin';
 import { Button } from '../components/ui/Button';
 
@@ -7,12 +8,13 @@ interface Props {
 }
 
 export function OnboardingSheet({ onDone }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const t = window.setTimeout(() => inputRef.current?.focus(), 380);
-    return () => clearTimeout(t);
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 380);
+    return () => clearTimeout(timer);
   }, []);
 
   const submit = () => {
@@ -39,10 +41,10 @@ export function OnboardingSheet({ onDone }: Props) {
 
         {/* copy */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <h2 style={{ fontSize: 26, marginBottom: 8 }}>Choose your name</h2>
+          <h2 style={{ fontSize: 26, marginBottom: 8 }}>{t('onboarding.title')}</h2>
           <p style={{ fontSize: 15, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.5 }}>
-            ...the one people actually recognize.{' '}
-            <span style={{ color: 'var(--text-faint)' }}>Your crew will see it every time you pay — or don't.</span>
+            {t('onboarding.body')}{' '}
+            <span style={{ color: 'var(--text-faint)' }}>{t('onboarding.bodySub')}</span>
           </p>
         </div>
 
@@ -51,7 +53,7 @@ export function OnboardingSheet({ onDone }: Props) {
           <input
             ref={inputRef}
             className="wp-input"
-            placeholder="e.g. Alex, Sandino, The One Who Pays…"
+            placeholder={t('onboarding.placeholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
@@ -63,10 +65,10 @@ export function OnboardingSheet({ onDone }: Props) {
         {/* actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Button variant="primary" size="lg" block onClick={submit} disabled={!name.trim()}>
-            That's me →
+            {t('onboarding.cta')}
           </Button>
           <Button variant="ghost" size="md" block onClick={() => onDone()}>
-            skip for now
+            {t('onboarding.skip')}
           </Button>
         </div>
       </div>

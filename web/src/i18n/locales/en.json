@@ -1,0 +1,127 @@
+{
+  "common": {
+    "you": "You",
+    "me": "me",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save",
+    "back": "Back",
+    "addName": "Add name",
+    "openSeat": "Open seat",
+    "newTable": "New table"
+  },
+  "time": {
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo": "{{count}} days ago"
+  },
+  "start": {
+    "proTrial": "Pro trial · {{days}}d left",
+    "pro": "Pro",
+    "profileLabel": "Your profile",
+    "heroTitle": "Who paid last?\nWho pays next?",
+    "heroSub": "Find out or play for it. Loser always pays.",
+    "newTable": "Start new table",
+    "tableLimitNote": "{{limit}} of {{limit}} free tables used · Go Pro for unlimited",
+    "yourTables": "Your tables",
+    "noTables": "No tables yet — start one above.",
+    "paidLast": "{{name}} paid last · {{time}}",
+    "noToss": "No coin tossed yet",
+    "syncedBadge": "synced",
+    "justYouBadge": "just you",
+    "deleteConfirm": "Delete {{label}}?"
+  },
+  "table": {
+    "paidLast": "paid last · {{time}}",
+    "notInSync": "not in sync",
+    "tapToEdit": "tap to edit",
+    "addPayment": "+ add payment",
+    "rollDice": "Roll the dice",
+    "pongForIt": "Pong for it",
+    "loserPays": "Loser pays",
+    "backLabel": "Back",
+    "addPersonLabel": "Add person",
+    "inviteLabel": "Invite",
+    "syncNudge": "Share table with {{name}} to be in sync",
+    "syncNudgeSub": "The coin's a shared responsibility ;-)"
+  },
+  "shareLanding": {
+    "invited": "You're invited to \"{{name}}\"",
+    "subtitle": "Save the table and see the coin move live — get Who Paid? to sync.",
+    "download": "Download on App Store",
+    "continueWeb": "Continue in browser"
+  },
+  "claimSeat": {
+    "joining": "Joining",
+    "title": "Who are you?",
+    "subtitle": "Pick your name to join the table",
+    "thisIsMe": "this is me ›",
+    "alreadyJoined": "already joined",
+    "someone": "Someone"
+  },
+  "onboarding": {
+    "title": "Choose your name",
+    "body": "...the one people actually recognize.",
+    "bodySub": "Your crew will see it every time you pay — or don't.",
+    "placeholder": "e.g. Alex, Sandino, The One Who Pays…",
+    "cta": "That's me →",
+    "skip": "skip for now"
+  },
+  "paywall": {
+    "title": "Keep the tab open",
+    "defaultTrigger": "You've started {{count}} of {{limit}} free tables.",
+    "benefit1": "Unlimited tables — every meal, trip, and round",
+    "benefit2": "Full payment history, never lose track",
+    "benefit3": "Sync with the whole group for shared tables",
+    "planTitle": "Pro — unlimited everything",
+    "cancelAnytime": "Cancel anytime",
+    "perMonth": "/month",
+    "trialCta": "Start 7-day free trial",
+    "maybeLater": "Maybe later"
+  },
+  "editSheet": {
+    "titleSelf": "You",
+    "photoAdded": "Photo added",
+    "snapPhoto": "Snap a photo",
+    "beautifySelf": "Beautify my side of the table.",
+    "beautifyOther": "Beautify their side of the table.",
+    "replacePhoto": "Replace",
+    "addPhoto": "Add photo",
+    "removePhoto": "Remove",
+    "theirName": "Their name",
+    "namePlaceholder": "e.g. Daniel",
+    "total": "Total",
+    "addPaymentLabel": "Add payment",
+    "add": "Add",
+    "remove": "Remove {{name}}"
+  },
+  "profile": {
+    "title": "Profile",
+    "changePhoto": "Change photo",
+    "uploadPhoto": "Upload a photo",
+    "photoNote": "This photo is shared with people in your synced tables.",
+    "firstName": "First name",
+    "firstNamePlaceholder": "Your first name",
+    "save": "Save profile",
+    "uploadLabel": "Upload photo"
+  },
+  "review": {
+    "openingStore": "Opening App Store…",
+    "thanksFeedback": "Thanks for the feedback",
+    "enjoying": "Enjoying WhoPaid?",
+    "ratingHelps": "A rating helps us reach more groups."
+  },
+  "toasts": {
+    "joinedShared": "Joined a shared table 🔗",
+    "openedShared": "Opened a shared table",
+    "linkNotAvailable": "That table link isn't available",
+    "inviteCopiedSync": "Invite link copied 🔗 — they'll see this table live",
+    "inviteCopied": "Invite link copied 🔗",
+    "trialStarted": "7-day Pro trial started — unlimited tables unlocked 🎉",
+    "profileSaved": "Profile saved ✓",
+    "claimedSeat": "You're in as {{name}} 🎉",
+    "thirdSeatAdded": "Third seat added — table splits in thirds",
+    "fourthSeatAdded": "Fourth seat added — splitting four ways",
+    "paywallTrigger4Person": "A 4-person table is a Pro feature. Split four ways, no sweat."
+  }
+}
