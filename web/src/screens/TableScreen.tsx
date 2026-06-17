@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Table } from '../lib/types';
+import type { Table, Person } from '../lib/types';
 import { paidLabel } from '../lib/util';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
@@ -30,9 +30,10 @@ interface Props {
   onEditPerson: (tableId: string, personId: string) => void;
   onAddPerson: (tableId: string) => void;
   onInvite: (table: Table) => void;
+  onSavePerson: (tableId: string, personId: string, upd: Partial<Person>) => void;
 }
 
-export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, onInvite }: Props) {
+export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, onInvite, onSavePerson }: Props) {
   const order = table.people; // others first, "me" last (bottom)
   const n = order.length;
   const paidIdx = order.findIndex((p) => p.id === table.paidBy);
@@ -54,11 +55,11 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     onInvite(table);
   };
 
+  const [inlineNames, setInlineNames] = useState<Record<string, string>>({});
   const tableRef = useRef<HTMLDivElement>(null);
   const coinRef = useRef<HTMLDivElement>(null);
   const squashRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLDivElement>(null);
   const shadowRef = useRef<HTMLDivElement>(null);
   const flyingRef = useRef(false);
   const spinRef = useRef(0);
@@ -66,10 +67,9 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
   const velRef = useRef({ vx: 0, vy: 0, lastX: 0, lastY: 0, t: 0 });
   const [celebrate, setCelebrate] = useState<{ id: number; payerIdx: number } | null>(null);
   const [hoverBandIdx, setHoverBandIdx] = useState<number | null>(null);
-  const [dicePicking, setDicePicking] = useState(false);
   const [mode, setMode] = useState<'idle' | 'pong'>('idle');
 
-  const startPong = () => { setDicePicking(false); setMode('pong'); };
+  const startPong = () => { setMode('pong'); };
 
   const onPongResult = (loserSide: 'top' | 'bot') => {
     const loserIdx = loserSide === 'top' ? 0 : n - 1;
@@ -91,6 +91,14 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     setMood(order[paidIdx].isMe ? 'pay' : 'safe');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table.paidBy]);
+
+  // Coin wiggle on new (unpaid) tables
+  useEffect(() => {
+    if (!hasPayer && squashRef.current) {
+      squashRef.current.style.animation = 'wp-coin-wiggle 0.65s ease-in-out, wp-coin-idle 2.8s 0.65s ease-in-out infinite';
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Where the coin rests inside a band (n ≤ 3): pulled toward the screen's centre so
   // it never covers that person's avatar + name, and clamped on-screen.
@@ -188,7 +196,6 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     if (flyingRef.current || !tableRef.current) return;
     flyingRef.current = true;
     setMood('flick');
-    if (hintRef.current) hintRef.current.style.opacity = '0';
 
     const w = coinRef.current!, sq = squashRef.current;
     const H = tableRef.current.clientHeight;
@@ -304,7 +311,6 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
       w.style.transition = '';
       if (sq) { sq.style.transform = ''; sq.style.animation = 'wp-coin-idle 2.8s ease-in-out infinite'; }
       flyingRef.current = false;
-      setDicePicking(false);
       setMood(order[targetIdx].isMe ? 'pay' : 'safe');
       const cid = Date.now();
       setCelebrate({ id: cid, payerIdx: targetIdx });
@@ -321,7 +327,6 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
     dragRef.current = { active: true, moved: false, startY: e.clientY, startX: e.clientX };
     coinRef.current?.setPointerCapture?.(e.pointerId);
     setMood('flick');
-    if (hintRef.current) hintRef.current.style.opacity = '0';
     // Scale coin up so the user knows they've grabbed it.
     if (scaleRef.current) {
       scaleRef.current.style.transition = 'transform 0.12s ease-out';
@@ -435,25 +440,26 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         const fontSize = is4 ? 17 : n === 3 ? 21 : 26;
         const addBox = is4 ? 44 : 60;
         const addIcon = is4 ? 18 : 24;
-        return (
-          <button key={p.id} onClick={() => onEditPerson(table.id, p.id)} style={{
-            position: 'absolute',
-            top: is4 ? `${row4 * 50}%` : `${(i / n) * 100}%`,
-            height: is4 ? '50%' : `${(1 / n) * 100}%`,
-            left: is4 ? (col4 === 0 ? 0 : '50%') : 0,
-            right: is4 ? (col4 === 0 ? '50%' : 0) : 0,
-            ...(is4 ? {} : { width: '100%' }),
-            border: 'none', cursor: 'pointer', textAlign: 'center',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: is4 ? 5 : 7, padding: '0 14px', overflow: 'hidden',
-            background: p.photo ? `center/cover url(${p.photo})`
-              : isPayer ? 'var(--mint-50)' : (isMe ? 'var(--surface-sunken)' : 'var(--card)'),
-            borderTop: (is4 ? row4 > 0 : i > 0) ? '1.5px solid var(--ink-100)' : 'none',
-            ...(is4 && col4 > 0 ? { borderLeft: '1.5px solid var(--ink-100)' } : {}),
-            transition: 'background .3s ease',
-          }}>
+        const isInlineEdit = !named && !isMe;
+        const bandStyle: React.CSSProperties = {
+          position: 'absolute',
+          top: is4 ? `${row4 * 50}%` : `${(i / n) * 100}%`,
+          height: is4 ? '50%' : `${(1 / n) * 100}%`,
+          left: is4 ? (col4 === 0 ? 0 : '50%') : 0,
+          right: is4 ? (col4 === 0 ? '50%' : 0) : 0,
+          ...(is4 ? {} : { width: '100%' }),
+          border: 'none', cursor: 'pointer', textAlign: 'center',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: is4 ? 5 : 7, padding: '0 14px', overflow: 'hidden',
+          background: p.photo ? `center/cover url(${p.photo})`
+            : isPayer ? 'var(--mint-50)' : (isMe ? 'var(--surface-sunken)' : 'var(--card)'),
+          borderTop: (is4 ? row4 > 0 : i > 0) ? '1.5px solid var(--ink-100)' : 'none',
+          ...(is4 && col4 > 0 ? { borderLeft: '1.5px solid var(--ink-100)' } : {}),
+          transition: 'background .3s ease',
+        };
+        const bandInner = (
+          <>
             {p.photo && <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,27,41,.15), rgba(28,27,41,.55))' }} />}
-            {/* Band highlight when coin is dragged over it */}
             {hoverBandIdx === i && (
               <span style={{ position: 'absolute', inset: 0, background: 'rgba(52,211,153,.18)', pointerEvents: 'none' }} />
             )}
@@ -462,9 +468,36 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                 ? <Avatar name={isMe ? 'You' : p.name} src={p.profilePhoto ?? null} size={avatarSize} ring={isPayer} />
                 : <span style={{ width: addBox, height: addBox, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--ink-300)', color: 'var(--ink-300)' }}><Icon name="user-plus" size={addIcon} /></span>)}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
-                  {isMe ? 'You' : (named ? p.name : 'Add name')}
-                </span>
+                {isInlineEdit ? (
+                  <input
+                    type="text"
+                    placeholder="Add name"
+                    autoFocus={!hasPayer}
+                    value={inlineNames[p.id] ?? ''}
+                    onChange={e => setInlineNames(prev => ({ ...prev, [p.id]: e.target.value }))}
+                    onBlur={() => {
+                      const name = (inlineNames[p.id] ?? '').trim();
+                      if (name) onSavePerson(table.id, p.id, { name });
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    onClick={e => e.stopPropagation()}
+                    onPointerDown={e => e.stopPropagation()}
+                    style={{
+                      background: 'transparent', border: 'none', outline: 'none',
+                      fontFamily: 'var(--font-display)', fontWeight: 600,
+                      fontSize, lineHeight: 1,
+                      color: 'var(--ink-900)',
+                      textAlign: 'center',
+                      width: '100%', minWidth: 0,
+                      padding: '4px 8px',
+                      caretColor: 'var(--mint-400)',
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize, lineHeight: 1, whiteSpace: 'nowrap', color: p.photo ? '#fff' : (named ? 'var(--ink-900)' : 'var(--ink-300)') }}>
+                    {isMe ? 'You' : (named ? p.name : 'Add name')}
+                  </span>
+                )}
                 {isPayer
                   ? <Badge color="mint" solid dot>paid last · {paidLabel(table.paidAt)}</Badge>
                   : (showNudge && !isMe && named)
@@ -474,11 +507,22 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
                           <span className="wp-amount" style={{ fontSize: 14, color: p.photo ? '#fff' : 'var(--text-muted)' }}>${p.amount.toFixed(2)}</span>
                           <span style={{ fontSize: 11, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.55)' : 'var(--text-faint)', letterSpacing: '0.02em' }}>+ add payment</span>
                         </div>
-                      : <span style={{ fontSize: 12.5, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--text-faint)' }}>
-                          <Icon name="image-plus" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />tap to edit
-                        </span>}
+                      : !isInlineEdit
+                        ? <span style={{ fontSize: 12.5, fontWeight: 700, color: p.photo ? 'rgba(255,255,255,.85)' : 'var(--text-faint)' }}>
+                            <Icon name="image-plus" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />tap to edit
+                          </span>
+                        : null}
               </div>
             </div>
+          </>
+        );
+        return isInlineEdit ? (
+          <div key={p.id} onClick={() => onEditPerson(table.id, p.id)} style={bandStyle}>
+            {bandInner}
+          </div>
+        ) : (
+          <button key={p.id} onClick={() => onEditPerson(table.id, p.id)} style={bandStyle}>
+            {bandInner}
           </button>
         );
       })}
@@ -495,7 +539,12 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
             <GoldCoin size={COIN} mood={mood} drop={false} />
           </div>
         </div>
-        <div ref={hintRef} style={{ position: 'absolute', left: '50%', top: -34, transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'var(--ink-900)', color: 'var(--paper)', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 11.5, padding: '5px 10px', borderRadius: 99, transition: 'opacity .3s', pointerEvents: 'none' }}>👆 flick to flip</div>
+        {!hasPayer && mode === 'idle' && (
+          <>
+            <svg style={{ position: 'absolute', left: '50%', top: -(COIN / 2 + 26), transform: 'translateX(-50%)', color: 'var(--ink-400)', pointerEvents: 'none', animation: 'wp-hint-fade 2.4s 0.7s ease-out forwards', opacity: 0 }} width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15" /></svg>
+            <svg style={{ position: 'absolute', left: '50%', bottom: -(COIN / 2 + 26), transform: 'translateX(-50%)', color: 'var(--ink-400)', pointerEvents: 'none', animation: 'wp-hint-fade 2.4s 0.9s ease-out forwards', opacity: 0 }} width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+          </>
+        )}
       </div>
 
       {/* top bar — hidden while Pong is running */}
@@ -561,61 +610,74 @@ export function TableScreen({ table, onBack, onPaid, onEditPerson, onAddPerson, 
         </div>
       )}
 
-      {/* dice / pong choice — hidden while Pong is running */}
-      {mode === 'idle' && (!hasPayer ? (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(26px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '0 16px' }}>
-          <button onClick={() => !flyingRef.current && glideTo(randomTarget())}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 13, cursor: 'pointer',
-              padding: '14px 24px 14px 18px', borderRadius: 999, border: '2px solid var(--ink-900)',
-              background: 'var(--sun-300)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
-              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, textAlign: 'left', lineHeight: 1.12,
-            }}>
-            <Icon name="dices" size={30} />
-            <span style={{ whiteSpace: 'nowrap' }}>Let the dice decide<br />who pays today</span>
-          </button>
-          {n === 2 && <>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>or play for it</span>
-            <button onClick={startPong} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-              padding: '14px 22px 14px 18px', borderRadius: 999, border: '2px solid var(--ink-900)',
-              background: 'var(--card)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
-              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17, lineHeight: 1.12,
-            }}>
-              <PongIcon size={28} />
-              <span style={{ whiteSpace: 'nowrap' }}>Play Pong — loser pays 🏓</span>
-            </button>
-          </>}
-        </div>
-      ) : (
-        <div style={{ position: 'absolute', right: 16, bottom: 'calc(16px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', alignItems: 'center', gap: 10 }}>
-          {dicePicking && (
-            <span style={{
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
-              color: 'var(--ink-900)', background: 'var(--sun-300)',
-              border: '2px solid var(--ink-900)', borderRadius: 99,
-              padding: '6px 13px', whiteSpace: 'nowrap', boxShadow: 'var(--shadow-sm)',
-              animation: 'wp-rise .2s ease both',
-            }}>
-              picking randomly…
-            </span>
-          )}
-          {n === 2 && (
-            <button onClick={startPong} aria-label="Play Pong"
-              style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--card)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <PongIcon size={26} />
-            </button>
-          )}
+      {/* no-payer options: flanking pills at coin level (2-person) or single centered (3/4-person) */}
+      {mode === 'idle' && !hasPayer && n === 2 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-50%)',
+          display: 'flex', alignItems: 'center',
+          padding: '0 14px', zIndex: 28, pointerEvents: 'none',
+        }}>
           <button
-            onClick={() => { if (!flyingRef.current) { setDicePicking(true); glideTo(randomTarget()); } }}
-            aria-label="Let the dice decide"
-            style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--sun-300)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => !flyingRef.current && glideTo(randomTarget())}
+            style={{
+              pointerEvents: 'auto', flex: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '10px 16px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--sun-300)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
+            }}
           >
-            <Icon name="dices" size={26} />
+            <Icon name="dices" size={20} />
+            Loser pays
+          </button>
+          <div style={{ flex: 1 }} />
+          <button
+            onClick={startPong}
+            style={{
+              pointerEvents: 'auto', flex: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '10px 16px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--card)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
+            }}
+          >
+            <PongIcon size={18} />
+            Play Pong
           </button>
         </div>
-      ))}
+      )}
+      {mode === 'idle' && !hasPayer && n !== 2 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: 0, right: 0,
+          transform: 'translateY(-50%)',
+          display: 'flex', justifyContent: 'flex-start', alignItems: 'center',
+          padding: '0 14px', zIndex: 28,
+        }}>
+          <button
+            onClick={() => !flyingRef.current && glideTo(randomTarget())}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              padding: '10px 16px', borderRadius: 999, border: '2px solid var(--ink-900)',
+              background: 'var(--sun-300)', color: 'var(--ink-900)', boxShadow: 'var(--pop-ink)',
+              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap',
+            }}
+          >
+            <Icon name="dices" size={20} />
+            Loser pays
+          </button>
+        </div>
+      )}
+      {/* after payer set: pong FAB only */}
+      {mode === 'idle' && hasPayer && n === 2 && (
+        <div style={{ position: 'absolute', right: 16, bottom: 'calc(16px + var(--wp-pad-bottom))', zIndex: 35, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={startPong} aria-label="Play Pong"
+            style={{ width: 54, height: 54, borderRadius: 999, border: '2px solid var(--ink-900)', background: 'var(--card)', color: 'var(--ink-900)', cursor: 'pointer', boxShadow: 'var(--pop-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <PongIcon size={26} />
+          </button>
+        </div>
+      )}
 
       {/* Pong mini-game — renders over the table bands when mode === 'pong' */}
       {mode === 'pong' && n === 2 && (

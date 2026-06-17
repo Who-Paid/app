@@ -63,8 +63,7 @@ export default function App() {
     const t = createTable(profile);
     setOpenId(t.id);
     setView('table');
-    flash('New table — add who you ate with 🍽️');
-  }, [createTable, flash, profile]);
+  }, [createTable, profile]);
 
   const startNew = () => {
     if (isAtLimit(tables.length)) {
@@ -151,6 +150,7 @@ export default function App() {
             flash(tbl && tbl.people.length >= 3 ? 'Fourth seat added — splitting four ways' : 'Third seat added — table splits in thirds');
           }}
             onInvite={onInvite}
+            onSavePerson={savePerson}
           />
         ) : (
           <div style={{ height: '100%', overflow: 'auto' }}>
