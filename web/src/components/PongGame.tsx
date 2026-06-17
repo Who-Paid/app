@@ -585,7 +585,7 @@ export function PongGame({
                 boxShadow: '0 4px 0 var(--mint-600)',
               }}
             >
-              Settle it 🪙
+              Settle it
             </button>
             <button
               onClick={handleRematch}
