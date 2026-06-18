@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Profile } from '../lib/types';
 import { compressImage } from '../lib/compressImage';
+import { signInWithApple, signInWithEmail } from '../lib/auth';
 import { Avatar } from '../components/ui/Avatar';
 import { Icon } from '../components/ui/Icon';
 import { IconButton } from '../components/ui/IconButton';
@@ -37,14 +38,20 @@ export function SignUpScreen({ profile, onBack, onSave, isLoggedIn = false, onSi
 
   const buildProfile = (): Profile => ({ name: name.trim() || 'You', photo });
 
-  const handleApple = () => {
+  const handleApple = async () => {
     if (!hasName) return;
-    onSave(buildProfile());
+    // Persist profile to localStorage so it survives the OAuth redirect
+    const next = buildProfile();
+    try { localStorage.setItem('wp-profile', JSON.stringify(next)); } catch { /* ignore */ }
+    await signInWithApple();
   };
 
-  const handleMagicLink = () => {
+  const handleMagicLink = async () => {
     if (!hasName || !hasEmail) return;
-    setEmailState('sent');
+    const next = buildProfile();
+    try { localStorage.setItem('wp-profile', JSON.stringify(next)); } catch { /* ignore */ }
+    const { error } = await signInWithEmail(email.trim());
+    if (!error) setEmailState('sent');
   };
 
   const pickFile = () => fileRef.current?.click();

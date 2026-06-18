@@ -10,6 +10,15 @@ export async function signInWithApple(): Promise<void> {
   if (error) console.warn('[auth] signInWithApple failed', error.message);
 }
 
+export async function signInWithEmail(email: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Auth not configured' };
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  });
+  return { error: error?.message ?? null };
+}
+
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   await supabase.auth.signOut();
